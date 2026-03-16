@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/AlertHub.Api/AlertHub.Api.csproj" />
+    <Project Path="src/AlertHub.Application/AlertHub.Application.csproj" />
+    <Project Path="src/AlertHub.Domain/AlertHub.Domain.csproj" />
+    <Project Path="src/AlertHub.Infrastructure/AlertHub.Infrastructure.csproj" />
+  </Folder>
+</Solution>
