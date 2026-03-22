@@ -1,7 +1,11 @@
-using AlertHub.Api.EndPoints;
+
+using AlertHub.Api;
+using AlertHub.Application.Features.Incidents.CreateIncident;
 using AlertHub.Infrastructure;
-using AlertHub.Infrastructure.Persistence;
+using FluentValidation;
 using Scalar.AspNetCore;
+using Wolverine;
+using Wolverine.FluentValidation;
 var builder = WebApplication.CreateBuilder(args);
 
 //registration of infratructure services
@@ -10,6 +14,13 @@ builder.Services.AddInfrastructure(builder.Configuration);
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+
+builder.Services.AddValidatorsFromAssemblyContaining<CreateIncidentCommand>();
+builder.Host.UseWolverine(opts =>
+{
+    opts.Discovery.IncludeAssembly(typeof(CreateIncidentCommand).Assembly);
+    opts.UseFluentValidation();
+});
 
 var app = builder.Build();
 

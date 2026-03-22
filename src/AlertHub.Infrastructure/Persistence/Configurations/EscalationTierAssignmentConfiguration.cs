@@ -10,6 +10,7 @@ public class EscalationTierAssignmentConfiguration : IEntityTypeConfiguration<Es
     {
         builder.HasKey(a => a.Id);
         builder.Property(a => a.Role).HasConversion<string>();
+        builder.Property(a => a.UseOnCallSchedule).HasDefaultValue(false);
 
         builder.HasOne(a => a.User)
             .WithMany()
@@ -19,6 +20,6 @@ public class EscalationTierAssignmentConfiguration : IEntityTypeConfiguration<Es
         builder.HasOne<Tenant>()
             .WithMany()
             .HasForeignKey(a => a.TenantId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

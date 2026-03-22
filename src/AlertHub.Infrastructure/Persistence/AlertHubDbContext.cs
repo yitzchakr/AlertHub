@@ -13,6 +13,10 @@ namespace AlertHub.Infrastructure.Persistence;
     public DbSet<Service> Services => Set<Service>();
     public DbSet<Incident> Incidents => Set<Incident>();
     public DbSet<IncidentEvent> IncidentEvents => Set<IncidentEvent>();
+    public DbSet<EscalationPolicy> EscalationPolicies => Set<EscalationPolicy>();
+    public DbSet<EscalationTier> EscalationTiers => Set<EscalationTier>();
+    public DbSet<EscalationTierAssignment> EscalationTierAssignments => Set<EscalationTierAssignment>();
+    public DbSet<OnCallSchedule> OnCallSchedules => Set<OnCallSchedule>();
     public AlertHubDbContext(DbContextOptions<AlertHubDbContext> options) : base(options)
     {
     }

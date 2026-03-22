@@ -1,7 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <PackageReference Include="FluentValidation" Version="12.1.1" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\AlertHub.Domain\AlertHub.Domain.csproj" />
+    <ProjectReference Include="..\AlertHub.Infrastructure\AlertHub.Infrastructure.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

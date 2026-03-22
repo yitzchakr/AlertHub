@@ -22,6 +22,88 @@ namespace AlertHub.Infrastructure.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("AlertHub.Domain.Entities.EscalationPolicy", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("EscalationPolicies");
+                });
+
+            modelBuilder.Entity("AlertHub.Domain.Entities.EscalationTier", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("EscalateAfterMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("EscalationPolicyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Level")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EscalationPolicyId");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("EscalationTiers");
+                });
+
+            modelBuilder.Entity("AlertHub.Domain.Entities.EscalationTierAssignment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("EscalationTierId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Role")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("UseOnCallSchedule")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EscalationTierId");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("EscalationTierAssignments");
+                });
+
             modelBuilder.Entity("AlertHub.Domain.Entities.Incident", b =>
                 {
                     b.Property<Guid>("Id")
@@ -106,6 +188,32 @@ namespace AlertHub.Infrastructure.Migrations
                     b.ToTable("IncidentEvents");
                 });
 
+            modelBuilder.Entity("AlertHub.Domain.Entities.OnCallSchedule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ServiceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ServiceId");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("OnCallSchedules");
+                });
+
             modelBuilder.Entity("AlertHub.Domain.Entities.Service", b =>
                 {
                     b.Property<Guid>("Id")
@@ -116,16 +224,23 @@ namespace AlertHub.Infrastructure.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid?>("EscalationPolicyId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("EscalationPolicyId");
 
                     b.HasIndex("TenantId");
 
@@ -186,6 +301,58 @@ namespace AlertHub.Infrastructure.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("AlertHub.Domain.Entities.EscalationPolicy", b =>
+                {
+                    b.HasOne("AlertHub.Domain.Entities.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("AlertHub.Domain.Entities.EscalationTier", b =>
+                {
+                    b.HasOne("AlertHub.Domain.Entities.EscalationPolicy", "Policy")
+                        .WithMany("Tiers")
+                        .HasForeignKey("EscalationPolicyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AlertHub.Domain.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Policy");
+                });
+
+            modelBuilder.Entity("AlertHub.Domain.Entities.EscalationTierAssignment", b =>
+                {
+                    b.HasOne("AlertHub.Domain.Entities.EscalationTier", "Tier")
+                        .WithMany("Assignments")
+                        .HasForeignKey("EscalationTierId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AlertHub.Domain.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AlertHub.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Tier");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("AlertHub.Domain.Entities.Incident", b =>
                 {
                     b.HasOne("AlertHub.Domain.Entities.User", "AcknowledgedBy")
@@ -196,7 +363,7 @@ namespace AlertHub.Infrastructure.Migrations
                     b.HasOne("AlertHub.Domain.Entities.Service", "Service")
                         .WithMany("Incidents")
                         .HasForeignKey("ServiceId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("AlertHub.Domain.Entities.Tenant", "Tenant")
@@ -223,13 +390,71 @@ namespace AlertHub.Infrastructure.Migrations
                     b.Navigation("Incident");
                 });
 
+            modelBuilder.Entity("AlertHub.Domain.Entities.OnCallSchedule", b =>
+                {
+                    b.HasOne("AlertHub.Domain.Entities.Service", "Service")
+                        .WithMany()
+                        .HasForeignKey("ServiceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AlertHub.Domain.Entities.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AlertHub.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.OwnsOne("AlertHub.Domain.Entities.TimeWindow", "Window", b1 =>
+                        {
+                            b1.Property<Guid>("OnCallScheduleId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<DateTime>("End")
+                                .HasColumnType("datetime2")
+                                .HasColumnName("WindowEnd");
+
+                            b1.Property<DateTime>("Start")
+                                .HasColumnType("datetime2")
+                                .HasColumnName("WindowStart");
+
+                            b1.HasKey("OnCallScheduleId");
+
+                            b1.ToTable("OnCallSchedules");
+
+                            b1.WithOwner()
+                                .HasForeignKey("OnCallScheduleId");
+                        });
+
+                    b.Navigation("Service");
+
+                    b.Navigation("Tenant");
+
+                    b.Navigation("User");
+
+                    b.Navigation("Window")
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("AlertHub.Domain.Entities.Service", b =>
                 {
+                    b.HasOne("AlertHub.Domain.Entities.EscalationPolicy", "EscalationPolicy")
+                        .WithMany("Services")
+                        .HasForeignKey("EscalationPolicyId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("AlertHub.Domain.Entities.Tenant", "Tenant")
                         .WithMany("Services")
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("EscalationPolicy");
 
                     b.Navigation("Tenant");
                 });
@@ -243,6 +468,18 @@ namespace AlertHub.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("AlertHub.Domain.Entities.EscalationPolicy", b =>
+                {
+                    b.Navigation("Services");
+
+                    b.Navigation("Tiers");
+                });
+
+            modelBuilder.Entity("AlertHub.Domain.Entities.EscalationTier", b =>
+                {
+                    b.Navigation("Assignments");
                 });
 
             modelBuilder.Entity("AlertHub.Domain.Entities.Incident", b =>

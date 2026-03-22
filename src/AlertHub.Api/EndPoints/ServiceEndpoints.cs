@@ -9,7 +9,7 @@ namespace AlertHub.Api.EndPoints;
 
 public static class ServiceEndpoints
 {
-    public static void MapEndpoints( this WebApplication app)
+    public static void MapServiceEndpoints(this WebApplication app)
     {
         var group = app.MapGroup("/api/services").WithTags("Services");
         group.MapPost("/", CreateService);

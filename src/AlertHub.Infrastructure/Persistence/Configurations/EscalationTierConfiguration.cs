@@ -23,7 +23,7 @@ public class EscalationTierConfiguration : IEntityTypeConfiguration<EscalationTi
         builder.HasOne<Tenant>()
             .WithMany()
             .HasForeignKey(t => t.TenantId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
     }
 
 }

@@ -1,3 +1,4 @@
+using AlertHub.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -5,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace AlertHub.Infrastructure.Persistence;
+namespace AlertHub.Infrastructure;
 
     public static class DependencyInjection
     {
