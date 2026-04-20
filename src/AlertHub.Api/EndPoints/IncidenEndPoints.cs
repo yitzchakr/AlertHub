@@ -16,7 +16,7 @@ public static class IncidentEndPoints
         group.MapPost("/", async (CreateIncidentCommand command, IMessageBus bus) =>
         {
             var response = await bus.InvokeAsync<CreateIncidentResponse>(command);
-            return Results.Created($"/api/incidents/{response.IncidentId}", response);
+            return TypedResults.Created($"/api/incidents/{response.IncidentId}", response);
         });
         group.MapGet("/{serviceId:guid}", async (Guid serviceId, int? page, int? pageSize, IMessageBus bus) =>
         {
@@ -26,7 +26,7 @@ public static class IncidentEndPoints
                page ?? 1,
                pageSize ?? 10
             ));
-            return Results.Ok(response);
+            return TypedResults.Ok(response);
         });
     }
 }

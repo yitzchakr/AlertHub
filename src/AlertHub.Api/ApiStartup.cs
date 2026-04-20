@@ -9,5 +9,7 @@ public static class ApiStartup
     {
         app.MapIncidentEndpoints();
         app.MapServiceEndpoints();
+        app.MapAuthEndpoints();
+        app.MapUserEndpoints();
     }
 }

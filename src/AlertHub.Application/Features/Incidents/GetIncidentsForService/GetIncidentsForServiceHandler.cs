@@ -1,9 +1,6 @@
 using AlertHub.Application.Common.Models;
-using AlertHub.Infrastructure.Persistence;
+using AlertHub.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace AlertHub.Application.Features.Incidents.GetIncidentsForService;
 
@@ -11,10 +8,10 @@ public static class GetIncidentsForServiceHandler
 {
     public static async Task<PagedResult<IncidentSummaryDto>> HandleAsync(
         GetIncidentsForServiceQuery query,
-        AlertHubDbContext db,
+        DbContext db,
         CancellationToken ct)
     {
-        var baseQuery = db.Incidents
+        var baseQuery = db.Set<Incident>()
             .Where(i => i.ServiceId == query.ServiceId)
             .OrderByDescending(i => i.CreatedAt);
 

@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "code-review-graph": {
+      "command": "python",
+      "args": ["-m", "code_review_graph"],
+      "env": {
+        "CRG_PROJECT_ROOT": "C:\\Users\\Owner\\source\\repos\\AlertHub"
+      }
+    }
+  }
+}

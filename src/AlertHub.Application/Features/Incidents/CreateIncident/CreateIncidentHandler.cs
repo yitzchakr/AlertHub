@@ -1,18 +1,15 @@
 using AlertHub.Domain.Entities;
-using AlertHub.Infrastructure.Persistence;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using Microsoft.EntityFrameworkCore;
 
 namespace AlertHub.Application.Features.Incidents.CreateIncident;
 
 
 public static class CreateIncidentHandler
 {
-    
+
     public static async Task<CreateIncidentResponse> HandleAsync(
         CreateIncidentCommand command,
-        AlertHubDbContext db,
+        DbContext db,
         CancellationToken ct)
     {
         var  _tempTenantId = Guid.Parse("00000000-0000-0000-0000-000000000001"); //replace with actual tenant ID in real implementation
@@ -33,8 +30,8 @@ public static class CreateIncidentHandler
            
       
 
-        db.Incidents.Add(incident);
-        db.IncidentEvents.Add(firstEvent);
+        db.Set<Incident>().Add(incident);
+        db.Set<IncidentEvent>().Add(firstEvent);
         await db.SaveChangesAsync(ct);
 
         return new CreateIncidentResponse(incident.Id);
