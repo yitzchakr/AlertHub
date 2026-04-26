@@ -4,7 +4,7 @@ using System.Text;
 
 namespace AlertHub.Domain.Entities;
 
-public class OnCallSchedule
+public class OnCallSchedule : ITenantEntity
 {
     public Guid Id { get; private set; }
     public Guid TenantId { get; private set; }

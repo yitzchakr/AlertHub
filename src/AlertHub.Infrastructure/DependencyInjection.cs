@@ -51,10 +51,12 @@ namespace AlertHub.Infrastructure;
 
         services.AddAuthorization();
 
-        services.AddScoped<IPasswordHasher,BCryptPasswordHasher>();
+        services.AddHttpContextAccessor();
+        services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
         services.AddScoped<ITokenService, TokenService>();
+        services.AddScoped<ITenantContext, HttpTenantContext>();
 
-            return services;
-        }
+        return services;
+    }
     }
 

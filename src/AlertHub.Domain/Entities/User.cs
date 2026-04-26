@@ -4,7 +4,7 @@ using System.Text;
 
 namespace AlertHub.Domain.Entities;
 
-    public class User
+    public class User : ITenantEntity
     {
     public Guid Id { get; private set; }
     public Guid TenantId { get; private set; }

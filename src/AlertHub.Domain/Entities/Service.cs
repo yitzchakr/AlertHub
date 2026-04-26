@@ -1,10 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace AlertHub.Domain.Entities;
 
-public class Service
+public class Service : ITenantEntity
 {
     public Guid Id { get; private set; }
     public Guid TenantId { get; private set; }

@@ -4,7 +4,7 @@ using System.Text;
 
 namespace AlertHub.Domain.Entities;
 
-public class EscalationTierAssignment
+public class EscalationTierAssignment : ITenantEntity
 {
     public Guid Id { get; private set; }
     public Guid EscalationTierId { get; private set; }

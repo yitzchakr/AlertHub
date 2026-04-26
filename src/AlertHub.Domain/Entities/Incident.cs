@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace AlertHub.Domain.Entities;
 
-public class Incident
+public class Incident : ITenantEntity
 {
     public Guid Id { get; private set; }
     public Guid TenantId { get; private set; }
