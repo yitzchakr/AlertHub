@@ -49,7 +49,12 @@ namespace AlertHub.Infrastructure;
           
         });
 
-        services.AddAuthorization();
+        services.AddAuthorization(options =>
+        {
+            options.FallbackPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
+                .RequireAuthenticatedUser()
+                .Build();
+        });
 
         services.AddHttpContextAccessor();
         services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
