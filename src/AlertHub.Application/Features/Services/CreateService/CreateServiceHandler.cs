@@ -1,3 +1,4 @@
+using AlertHub.Application.Interfaces;
 using AlertHub.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,9 +9,11 @@ public static class CreateServiceHandler
     public static async Task<CreateServiceResponse> HandleAsync(
         CreateServiceCommand command,
         DbContext db,
+        ITenantContext tenantContext,
         CancellationToken ct)
     {
-        var tenantId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+        var tenantId = tenantContext.TenantId
+            ?? throw new InvalidOperationException("Tenant context is required.");
 
         var service = Service.Create(tenantId, command.Name, command.Description);
 

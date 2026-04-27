@@ -15,7 +15,9 @@ public static class RefreshHandler
     {
         var principal = tokenService.GetPrincipalFromExpiredToken(command.AccessToken);
         var userId = Guid.Parse(principal.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-        var user = await db.Set<User>().FindAsync([userId], ct);
+        var user = await db.Set<User>()
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(u => u.Id == userId, ct);
         if (user == null || user.RefreshToken != command.RefreshToken || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
         {
             if (user != null)

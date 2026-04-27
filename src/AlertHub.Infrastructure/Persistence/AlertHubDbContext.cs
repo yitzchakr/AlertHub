@@ -35,14 +35,13 @@ public class AlertHubDbContext(DbContextOptions<AlertHubDbContext> options, ITen
 
     private LambdaExpression CreateTenantFilter(Type entityType)
     {
-        // Builds: e => _tenantContext != null && e.TenantId == _tenantContext.TenantId
+        // Builds: e => _tenantContext != null
+        //              && e.TenantId == _tenantContext.TenantId.GetValueOrDefault()
+        // When TenantId is null, GetValueOrDefault() returns Guid.Empty,
+        // which won't match any entity — effectively filtering everything out.
         var parameter = Expression.Parameter(entityType, "e");
         var tenantIdProperty = Expression.Property(parameter, nameof(ITenantEntity.TenantId));
 
-        // Use Expression.Field — _tenantContext is a field, not a property.
-        // Expression.Constant(this) captures the DbContext instance, but because
-        // _tenantContext is a scoped service resolved per-request, EF re-evaluates
-        // the field access each time the filter runs.
         var tenantContextField = Expression.Field(
             Expression.Constant(this), "_tenantContext");
         var currentTenantId = Expression.Property(tenantContextField, nameof(ITenantContext.TenantId));
@@ -51,7 +50,11 @@ public class AlertHubDbContext(DbContextOptions<AlertHubDbContext> options, ITen
         var nullCheck = Expression.NotEqual(
             tenantContextField,
             Expression.Constant(null, typeof(ITenantContext)));
-        var tenantMatch = Expression.Equal(tenantIdProperty, currentTenantId);
+
+        // Safe access — returns Guid.Empty when TenantId is null (no JWT)
+        var getValueOrDefault = Expression.Call(currentTenantId, "GetValueOrDefault", Type.EmptyTypes);
+        var tenantMatch = Expression.Equal(tenantIdProperty, getValueOrDefault);
+
         var filter = Expression.AndAlso(nullCheck, tenantMatch);
 
         return Expression.Lambda(filter, parameter);
@@ -59,10 +62,10 @@ public class AlertHubDbContext(DbContextOptions<AlertHubDbContext> options, ITen
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        if (_tenantContext is not null)
+        var currentTenantId = _tenantContext?.TenantId;
+        if (currentTenantId.HasValue)
         {
-            var currentTenantId = _tenantContext.TenantId;
-            EnforceTenantId(currentTenantId);
+            EnforceTenantId(currentTenantId.Value);
         }
 
         return await base.SaveChangesAsync(cancellationToken);
@@ -70,10 +73,10 @@ public class AlertHubDbContext(DbContextOptions<AlertHubDbContext> options, ITen
 
     public override int SaveChanges()
     {
-        if (_tenantContext is not null)
+        var currentTenantId = _tenantContext?.TenantId;
+        if (currentTenantId.HasValue)
         {
-            var currentTenantId = _tenantContext.TenantId;
-            EnforceTenantId(currentTenantId);
+            EnforceTenantId(currentTenantId.Value);
         }
 
         return base.SaveChanges();

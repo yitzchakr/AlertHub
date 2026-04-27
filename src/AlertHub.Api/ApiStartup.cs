@@ -11,5 +11,7 @@ public static class ApiStartup
         app.MapServiceEndpoints();
         app.MapAuthEndpoints();
         app.MapUserEndpoints();
+        app.MapTenantEndpoints();
+        app.MapEscalationPolicyEndpoints();
     }
 }

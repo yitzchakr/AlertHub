@@ -12,10 +12,12 @@ public static class CreateUserHandler
     public static async Task<CreateUserResponse> HandleAsync(CreateUserCommand command, DbContext db, IPasswordHasher passwordHasher, CancellationToken ct)
     {
         var tenant = await db.Set<Tenant>()
+            .IgnoreQueryFilters()
             .FirstOrDefaultAsync(t => t.Id == command.TenantId, ct) ?? throw new InvalidOperationException("Tenant not found.");
 
         var existingUser = await db.Set<User>()
-            .FirstOrDefaultAsync(u => u.Email == command.Email, ct);
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(u => u.Email == command.Email && u.TenantId == command.TenantId, ct);
         if (existingUser != null)
         {
             throw new InvalidOperationException("A user with this email already exists.");

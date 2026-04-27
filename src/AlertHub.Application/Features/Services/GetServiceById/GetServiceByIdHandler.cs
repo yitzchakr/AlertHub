@@ -10,10 +10,8 @@ public static class GetServiceByIdHandler
         DbContext db,
         CancellationToken ct)
     {
-        var tenantId = Guid.Parse("00000000-0000-0000-0000-000000000001");
-
         return await db.Set<Service>()
-            .Where(s => s.TenantId == tenantId && s.Id == query.ServiceId)
+            .Where(s => s.Id == query.ServiceId)
             .Select(s => new ServiceSummaryDto(s.Id, s.Name, s.Description, s.CreatedAt))
             .FirstOrDefaultAsync(ct);
     }

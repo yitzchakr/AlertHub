@@ -26,4 +26,9 @@ public class Tenant
             CreatedAt = DateTime.UtcNow
         };
     }
+
+    public void UpdateName(string name)
+    {
+        Name = name;
+    }
 }

@@ -13,7 +13,8 @@ public static class LoginHandler
         DbContext db, ITokenService tokenService,IPasswordHasher passwordHasher, CancellationToken ct)
     {
         var user = await db.Set<User>()
-            .FirstOrDefaultAsync(u => u.Email == command.Email,ct);
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(u => u.Email == command.Email, ct);
         if (user == null || !passwordHasher.Verify(command.Password, user.PasswordHash))
         {
             throw new UnauthorizedAccessException("Invalid email or password.");
