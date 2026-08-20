@@ -2,6 +2,7 @@ using AlertHub.Application.Interfaces;
 using AlertHub.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Metadata;
 using System.Linq.Expressions;
 
 namespace AlertHub.Infrastructure.Persistence;
@@ -29,6 +30,16 @@ public class AlertHubDbContext(DbContextOptions<AlertHubDbContext> options, ITen
             {
                 var filter = CreateTenantFilter(entityType.ClrType);
                 modelBuilder.Entity(entityType.ClrType).HasQueryFilter(filter);
+            }
+
+            // Domain factories assign Guid keys, so EF must not treat them as
+            // store-generated: otherwise a new child reached through a tracked
+            // parent's navigation is tracked as Modified (its key is already set)
+            // and saved as an UPDATE that matches no row.
+            var key = entityType.FindPrimaryKey();
+            if (key?.Properties is [{ ClrType: var keyClrType } keyProperty] && keyClrType == typeof(Guid))
+            {
+                keyProperty.ValueGenerated = ValueGenerated.Never;
             }
         }
     }

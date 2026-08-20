@@ -23,6 +23,17 @@ builder.Services.AddOpenApi(options =>
 
 builder.Services.AddRateLimitPolicies();
 
+const string FrontendCorsPolicy = "FrontendCorsPolicy";
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(FrontendCorsPolicy, policy =>
+    {
+        policy.WithOrigins("http://localhost:5173")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+
 builder.Services.AddValidatorsFromAssemblyContaining<CreateIncidentCommand>();
 builder.Host.UseWolverine(opts =>
 {
@@ -44,6 +55,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors(FrontendCorsPolicy);
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
