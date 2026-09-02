@@ -5,4 +5,8 @@
     <Project Path="src/AlertHub.Domain/AlertHub.Domain.csproj" />
     <Project Path="src/AlertHub.Infrastructure/AlertHub.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/AlertHub.Domain.Tests/AlertHub.Domain.Tests.csproj" />
+    <Project Path="tests/AlertHub.Application.Tests/AlertHub.Application.Tests.csproj" />
+  </Folder>
 </Solution>
