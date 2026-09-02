@@ -1,3 +1,5 @@
+using AlertHub.Application.Features.EscalationPolicies;
+using AlertHub.Application.Features.OnCall;
 using AlertHub.Application.Interfaces;
 using AlertHub.Infrastructure.Auth;
 using AlertHub.Infrastructure.Persistence;
@@ -60,6 +62,11 @@ namespace AlertHub.Infrastructure;
         services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<ITenantContext, HttpTenantContext>();
+
+        // Live in the Application assembly (it references EF Core) but are registered
+        // here alongside the other scoped services.
+        services.AddScoped<IOnCallResolver, OnCallResolver>();
+        services.AddScoped<IEscalationTargetResolver, EscalationTargetResolver>();
 
         return services;
     }
