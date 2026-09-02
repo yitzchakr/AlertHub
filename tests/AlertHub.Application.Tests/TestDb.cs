@@ -37,6 +37,8 @@ public sealed class TestDb : IDisposable
     /// <summary>Tier naming the admin directly, who is also caught by no role sweep.</summary>
     public Guid DirectUserTierId { get; }
 
+    public Guid IncidentId { get; }
+
     public TestDb()
     {
         _connection = new SqliteConnection("Filename=:memory:");
@@ -81,10 +83,15 @@ public sealed class TestDb : IDisposable
         OnCallOnlyTierId = onCallOnlyTier.Id;
         DirectUserTierId = directUserTier.Id;
 
+        var incident = Incident.Create(
+            TenantId, ServiceId, "Checkout returning 500s", IncidentSeverity.P1_Critical);
+        IncidentId = incident.Id;
+
         Db.AddRange(tenant, otherTenant);
         Db.AddRange(service, secondService, otherService);
         Db.AddRange(admin, responder, secondResponder, otherTenantResponder);
         Db.Add(policy);
+        Db.Add(incident);
         Db.AddRange(
             EscalationTierAssignment.ForOnCall(MixedTierId, TenantId),
             EscalationTierAssignment.ForRole(MixedTierId, TenantId, UserRole.Responder),

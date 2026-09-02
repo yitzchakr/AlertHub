@@ -1,12 +1,6 @@
-namespace AlertHub.Application.Features.EscalationPolicies;
+using AlertHub.Domain.Entities;
 
-/// <summary>How an assignment selected this person.</summary>
-public enum EscalationTargetSource
-{
-    DirectUser,
-    Role,
-    OnCall
-}
+namespace AlertHub.Application.Features.EscalationPolicies;
 
 public record EscalationTargetDto(
     Guid UserId,

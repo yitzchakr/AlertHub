@@ -153,6 +153,71 @@ namespace AlertHub.Infrastructure.Migrations
                     b.ToTable("Incidents");
                 });
 
+            modelBuilder.Entity("AlertHub.Domain.Entities.IncidentEscalation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("DueAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("EscalationTierId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("IncidentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Level")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("NotifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EscalationTierId");
+
+                    b.HasIndex("NotifiedAt")
+                        .HasFilter("[NotifiedAt] IS NULL");
+
+                    b.HasIndex("IncidentId", "Level")
+                        .IsUnique();
+
+                    b.ToTable("IncidentEscalations");
+                });
+
+            modelBuilder.Entity("AlertHub.Domain.Entities.IncidentEscalationTarget", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("IncidentEscalationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("IncidentEscalationId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("IncidentEscalationTargets");
+                });
+
             modelBuilder.Entity("AlertHub.Domain.Entities.IncidentEvent", b =>
                 {
                     b.Property<Guid>("Id")
@@ -389,6 +454,44 @@ namespace AlertHub.Infrastructure.Migrations
                     b.Navigation("Tenant");
                 });
 
+            modelBuilder.Entity("AlertHub.Domain.Entities.IncidentEscalation", b =>
+                {
+                    b.HasOne("AlertHub.Domain.Entities.EscalationTier", "Tier")
+                        .WithMany()
+                        .HasForeignKey("EscalationTierId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AlertHub.Domain.Entities.Incident", "Incident")
+                        .WithMany()
+                        .HasForeignKey("IncidentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Incident");
+
+                    b.Navigation("Tier");
+                });
+
+            modelBuilder.Entity("AlertHub.Domain.Entities.IncidentEscalationTarget", b =>
+                {
+                    b.HasOne("AlertHub.Domain.Entities.IncidentEscalation", "Escalation")
+                        .WithMany("Targets")
+                        .HasForeignKey("IncidentEscalationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AlertHub.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Escalation");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("AlertHub.Domain.Entities.IncidentEvent", b =>
                 {
                     b.HasOne("AlertHub.Domain.Entities.Incident", "Incident")
@@ -495,6 +598,11 @@ namespace AlertHub.Infrastructure.Migrations
             modelBuilder.Entity("AlertHub.Domain.Entities.Incident", b =>
                 {
                     b.Navigation("Events");
+                });
+
+            modelBuilder.Entity("AlertHub.Domain.Entities.IncidentEscalation", b =>
+                {
+                    b.Navigation("Targets");
                 });
 
             modelBuilder.Entity("AlertHub.Domain.Entities.Service", b =>
