@@ -25,7 +25,6 @@ namespace AlertHub.Infrastructure.Migrations
             modelBuilder.Entity("AlertHub.Domain.Entities.EscalationPolicy", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Name")
@@ -46,7 +45,6 @@ namespace AlertHub.Infrastructure.Migrations
             modelBuilder.Entity("AlertHub.Domain.Entities.EscalationTier", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("EscalateAfterMinutes")
@@ -73,7 +71,6 @@ namespace AlertHub.Infrastructure.Migrations
             modelBuilder.Entity("AlertHub.Domain.Entities.EscalationTierAssignment", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("EscalationTierId")
@@ -107,7 +104,6 @@ namespace AlertHub.Infrastructure.Migrations
             modelBuilder.Entity("AlertHub.Domain.Entities.Incident", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("AcknowledgedAt")
@@ -160,7 +156,6 @@ namespace AlertHub.Infrastructure.Migrations
             modelBuilder.Entity("AlertHub.Domain.Entities.IncidentEvent", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Description")
@@ -188,17 +183,23 @@ namespace AlertHub.Infrastructure.Migrations
                     b.ToTable("IncidentEvents");
                 });
 
-            modelBuilder.Entity("AlertHub.Domain.Entities.OnCallSchedule", b =>
+            modelBuilder.Entity("AlertHub.Domain.Entities.OnCallShift", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("ServiceId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("TimeZoneId")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
@@ -211,13 +212,12 @@ namespace AlertHub.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("OnCallSchedules");
+                    b.ToTable("OnCallShifts");
                 });
 
             modelBuilder.Entity("AlertHub.Domain.Entities.Service", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
@@ -250,7 +250,6 @@ namespace AlertHub.Infrastructure.Migrations
             modelBuilder.Entity("AlertHub.Domain.Entities.Tenant", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
@@ -269,7 +268,6 @@ namespace AlertHub.Infrastructure.Migrations
             modelBuilder.Entity("AlertHub.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
@@ -402,7 +400,7 @@ namespace AlertHub.Infrastructure.Migrations
                     b.Navigation("Incident");
                 });
 
-            modelBuilder.Entity("AlertHub.Domain.Entities.OnCallSchedule", b =>
+            modelBuilder.Entity("AlertHub.Domain.Entities.OnCallShift", b =>
                 {
                     b.HasOne("AlertHub.Domain.Entities.Service", "Service")
                         .WithMany()
@@ -424,7 +422,7 @@ namespace AlertHub.Infrastructure.Migrations
 
                     b.OwnsOne("AlertHub.Domain.Entities.TimeWindow", "Window", b1 =>
                         {
-                            b1.Property<Guid>("OnCallScheduleId")
+                            b1.Property<Guid>("OnCallShiftId")
                                 .HasColumnType("uniqueidentifier");
 
                             b1.Property<DateTime>("End")
@@ -435,12 +433,12 @@ namespace AlertHub.Infrastructure.Migrations
                                 .HasColumnType("datetime2")
                                 .HasColumnName("WindowStart");
 
-                            b1.HasKey("OnCallScheduleId");
+                            b1.HasKey("OnCallShiftId");
 
-                            b1.ToTable("OnCallSchedules");
+                            b1.ToTable("OnCallShifts");
 
                             b1.WithOwner()
-                                .HasForeignKey("OnCallScheduleId");
+                                .HasForeignKey("OnCallShiftId");
                         });
 
                     b.Navigation("Service");

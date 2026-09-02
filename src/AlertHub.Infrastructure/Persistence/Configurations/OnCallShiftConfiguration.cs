@@ -4,19 +4,18 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace AlertHub.Infrastructure.Persistence.Configurations;
 
-public class OnCallScheduleConfiguration
-    : IEntityTypeConfiguration<OnCallSchedule>
+public class OnCallShiftConfiguration : IEntityTypeConfiguration<OnCallShift>
 {
-    public void Configure(EntityTypeBuilder<OnCallSchedule> builder)
+    public void Configure(EntityTypeBuilder<OnCallShift> builder)
     {
         builder.HasKey(s => s.Id);
 
+        builder.Property(s => s.TimeZoneId).HasMaxLength(64);
+
         builder.OwnsOne(s => s.Window, window =>
         {
-            window.Property(w => w.Start)
-                .HasColumnName("WindowStart");
-            window.Property(w => w.End)
-                .HasColumnName("WindowEnd");
+            window.Property(w => w.Start).HasColumnName("WindowStart");
+            window.Property(w => w.End).HasColumnName("WindowEnd");
         });
 
         builder.HasOne(s => s.Service)

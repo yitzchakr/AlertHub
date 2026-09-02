@@ -1,4 +1,5 @@
 using AlertHub.Application.Interfaces;
+using AlertHub.Infrastructure.Persistence.Converters;
 using AlertHub.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -17,8 +18,24 @@ public class AlertHubDbContext(DbContextOptions<AlertHubDbContext> options, ITen
     public DbSet<EscalationPolicy> EscalationPolicies => Set<EscalationPolicy>();
     public DbSet<EscalationTier> EscalationTiers => Set<EscalationTier>();
     public DbSet<EscalationTierAssignment> EscalationTierAssignments => Set<EscalationTierAssignment>();
-    public DbSet<OnCallSchedule> OnCallSchedules => Set<OnCallSchedule>();
+    public DbSet<OnCallShift> OnCallShifts => Set<OnCallShift>();
     private readonly ITenantContext? _tenantContext = tenantContext;
+
+    /// <summary>
+    /// Every timestamp in the domain is a UTC instant, but SQL Server returns datetime2
+    /// as DateTimeKind.Unspecified. Such a value serializes without a trailing 'Z', and a
+    /// browser client then reads it as local time — so an incident created at 14:00 UTC
+    /// displays as 14:00 local, silently wrong by the client's offset. Stamping the kind on
+    /// read keeps a UTC instant a UTC instant end to end.
+    ///
+    /// Pre-convention configuration reaches owned-type properties too, so the TimeWindow
+    /// columns on OnCallShift are covered along with everything else.
+    /// </summary>
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        configurationBuilder.Properties<DateTime>()
+            .HaveConversion<UtcDateTimeConverter>();
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -5,6 +5,7 @@ using AlertHub.Application.Features.EscalationPolicies.CreateEscalationPolicy;
 using AlertHub.Application.Features.EscalationPolicies.DeleteEscalationPolicy;
 using AlertHub.Application.Features.EscalationPolicies.GetEscalationPolicies;
 using AlertHub.Application.Features.EscalationPolicies.GetEscalationPolicyById;
+using AlertHub.Application.Features.EscalationPolicies.GetTierTargets;
 using AlertHub.Domain.Entities;
 using Wolverine;
 
@@ -45,6 +46,16 @@ public static class EscalationPolicyEndpoints
             var response = await bus.InvokeAsync<AddTierResponse>(
                 new AddTierCommand(id, request.Level, request.EscalateAfterMinutes));
             return TypedResults.Created($"/api/escalation-policies/{id}", response);
+        });
+
+        // Answers "who would this tier page?" before an outage answers it for you.
+        // serviceId is required: a tier only resolves in the context of a service.
+        group.MapGet("/{id:guid}/tiers/{tierId:guid}/targets", async (
+            Guid id, Guid tierId, Guid serviceId, DateTime? at, IMessageBus bus) =>
+        {
+            var response = await bus.InvokeAsync<IReadOnlyList<EscalationTargetDto>>(
+                new GetTierTargetsQuery(tierId, serviceId, at));
+            return TypedResults.Ok(response);
         });
 
         group.MapPost("/{id:guid}/tiers/{tierId:guid}/assignments", async (Guid id, Guid tierId, AddAssignmentRequest request, IMessageBus bus) =>

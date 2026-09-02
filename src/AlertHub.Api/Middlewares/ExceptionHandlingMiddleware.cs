@@ -1,3 +1,4 @@
+using AlertHub.Domain.Exceptions;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 
@@ -32,6 +33,21 @@ public class ExceptionHandlingMiddleware
                 Type = "https://tools.ietf.org/html/rfc9110#section-15.5.1"
             });
         }
+        catch (NotFoundException ex)
+        {
+            await WriteProblemAsync(context, StatusCodes.Status404NotFound,
+                "Resource not found.", ex.Message);
+        }
+        catch (ConflictException ex)
+        {
+            await WriteProblemAsync(context, StatusCodes.Status409Conflict,
+                "The request conflicts with existing state.", ex.Message);
+        }
+        catch (DomainException ex)
+        {
+            await WriteProblemAsync(context, StatusCodes.Status400BadRequest,
+                "The request could not be completed.", ex.Message);
+        }
         catch (Exception ex)
         {
             context.Response.StatusCode = StatusCodes.Status500InternalServerError;
@@ -42,5 +58,17 @@ public class ExceptionHandlingMiddleware
                 Detail = ex.Message
             });
         }
+    }
+
+    private static Task WriteProblemAsync(
+        HttpContext context, int statusCode, string title, string detail)
+    {
+        context.Response.StatusCode = statusCode;
+        return context.Response.WriteAsJsonAsync(new ProblemDetails
+        {
+            Status = statusCode,
+            Title = title,
+            Detail = detail
+        });
     }
 }
