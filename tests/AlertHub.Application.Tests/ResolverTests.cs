@@ -1,5 +1,6 @@
 using AlertHub.Application.Features.EscalationPolicies;
 using AlertHub.Application.Features.OnCall;
+using AlertHub.Domain.Entities;
 
 namespace AlertHub.Application.Tests;
 

@@ -8,5 +8,6 @@
   <Folder Name="/tests/">
     <Project Path="tests/AlertHub.Domain.Tests/AlertHub.Domain.Tests.csproj" />
     <Project Path="tests/AlertHub.Application.Tests/AlertHub.Application.Tests.csproj" />
+    <Project Path="tests/AlertHub.Api.Tests/AlertHub.Api.Tests.csproj" />
   </Folder>
 </Solution>

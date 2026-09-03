@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
+using AlertHub.Domain.Exceptions;
+
 namespace AlertHub.Domain.Entities;
 
 public class Incident : ITenantEntity
@@ -17,6 +19,13 @@ public class Incident : ITenantEntity
     public DateTime? AcknowledgedAt { get; private set; }
     public DateTime? ResolvedAt { get; private set; }
     public Guid? AcknowledgedByUserId { get; private set; }
+
+    /// <summary>
+    /// Set once escalation has run out of tiers. Without it, "we escalated through every
+    /// tier and reached nobody" is indistinguishable from "everything is fine", and every
+    /// exhausted incident is re-evaluated on every scan forever.
+    /// </summary>
+    public DateTime? EscalationExhaustedAt { get; private set; }
 
     // Navigation
     public Tenant Tenant { get; private set; } = default!;
@@ -79,6 +88,39 @@ public class Incident : ITenantEntity
         Status = IncidentStatus.Resolved;
         ResolvedAt = DateTime.UtcNow;
         AddEvent(IncidentEventType.Resolved, resolution);
+    }
+
+    /// <summary>
+    /// Writes an escalation onto the incident's timeline. The status guard is the
+    /// authoritative stop condition: a scan can decide an incident is due and an
+    /// acknowledgement can land before the write, and this is what refuses it.
+    /// </summary>
+    public void RecordEscalation(int level, string description)
+    {
+        if (Status != IncidentStatus.Triggered)
+            throw new DomainException(
+                $"Cannot escalate an incident in '{Status}' state. Escalation stops once "
+              + "somebody has taken it.");
+
+        AddEvent(IncidentEventType.Escalated, description);
+    }
+
+    /// <summary>
+    /// Records that the escalation policy has no further tier to try. Throws rather than
+    /// no-oping when called twice, so a scan that forgets to exclude exhausted incidents
+    /// fails loudly instead of quietly rewriting the timeline.
+    /// </summary>
+    public void RecordEscalationExhausted(string description)
+    {
+        if (Status != IncidentStatus.Triggered)
+            throw new DomainException(
+                $"Cannot exhaust escalation for an incident in '{Status}' state.");
+
+        if (EscalationExhaustedAt is not null)
+            throw new DomainException("Escalation is already recorded as exhausted.");
+
+        EscalationExhaustedAt = DateTime.UtcNow;
+        AddEvent(IncidentEventType.Escalated, description);
     }
 
     private void AddEvent(IncidentEventType type, string description)

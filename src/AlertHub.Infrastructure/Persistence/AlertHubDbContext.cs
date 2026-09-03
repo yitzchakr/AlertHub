@@ -19,6 +19,8 @@ public class AlertHubDbContext(DbContextOptions<AlertHubDbContext> options, ITen
     public DbSet<EscalationTier> EscalationTiers => Set<EscalationTier>();
     public DbSet<EscalationTierAssignment> EscalationTierAssignments => Set<EscalationTierAssignment>();
     public DbSet<OnCallShift> OnCallShifts => Set<OnCallShift>();
+    public DbSet<IncidentEscalation> IncidentEscalations => Set<IncidentEscalation>();
+    public DbSet<IncidentEscalationTarget> IncidentEscalationTargets => Set<IncidentEscalationTarget>();
     private readonly ITenantContext? _tenantContext = tenantContext;
 
     /// <summary>
