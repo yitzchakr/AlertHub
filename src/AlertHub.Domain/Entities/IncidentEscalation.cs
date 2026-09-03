@@ -29,6 +29,13 @@ public class IncidentEscalation : ITenantEntity
     /// </summary>
     public DateTime? NotifiedAt { get; private set; }
 
+    /// <summary>
+    /// How many times sending has been tried. Counted before the send rather than after a
+    /// failure, because a crash mid-send would otherwise never be counted and the retry
+    /// loop would be unbounded — re-paging the same people every tick forever.
+    /// </summary>
+    public int Attempts { get; private set; }
+
     // Navigation
     public Incident Incident { get; private set; } = default!;
     public EscalationTier Tier { get; private set; } = default!;
@@ -56,6 +63,24 @@ public class IncidentEscalation : ITenantEntity
             DueAt = TimeWindow.NormalizeToUtc(dueAt)
         };
     }
+
+    /// <summary>
+    /// Claims one send attempt. Call before handing anything to a sender.
+    /// </summary>
+    public void RecordAttempt()
+    {
+        if (NotifiedAt is not null)
+            throw new DomainException(
+                "This escalation is already notified; there is nothing left to attempt.");
+
+        Attempts++;
+    }
+
+    /// <summary>
+    /// True once sending has been tried too many times without success. Giving up drops a
+    /// page, so the caller is expected to make that loud rather than silent.
+    /// </summary>
+    public bool HasGivenUp(int maxAttempts) => NotifiedAt is null && Attempts >= maxAttempts;
 
     /// <summary>
     /// Records the recipients and stamps the send in one step, so an escalation cannot be

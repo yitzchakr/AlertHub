@@ -20,6 +20,13 @@ public class Incident : ITenantEntity
     public DateTime? ResolvedAt { get; private set; }
     public Guid? AcknowledgedByUserId { get; private set; }
 
+    /// <summary>
+    /// Set once escalation has run out of tiers. Without it, "we escalated through every
+    /// tier and reached nobody" is indistinguishable from "everything is fine", and every
+    /// exhausted incident is re-evaluated on every scan forever.
+    /// </summary>
+    public DateTime? EscalationExhaustedAt { get; private set; }
+
     // Navigation
     public Tenant Tenant { get; private set; } = default!;
     public Service Service { get; private set; } = default!;
@@ -95,6 +102,24 @@ public class Incident : ITenantEntity
                 $"Cannot escalate an incident in '{Status}' state. Escalation stops once "
               + "somebody has taken it.");
 
+        AddEvent(IncidentEventType.Escalated, description);
+    }
+
+    /// <summary>
+    /// Records that the escalation policy has no further tier to try. Throws rather than
+    /// no-oping when called twice, so a scan that forgets to exclude exhausted incidents
+    /// fails loudly instead of quietly rewriting the timeline.
+    /// </summary>
+    public void RecordEscalationExhausted(string description)
+    {
+        if (Status != IncidentStatus.Triggered)
+            throw new DomainException(
+                $"Cannot exhaust escalation for an incident in '{Status}' state.");
+
+        if (EscalationExhaustedAt is not null)
+            throw new DomainException("Escalation is already recorded as exhausted.");
+
+        EscalationExhaustedAt = DateTime.UtcNow;
         AddEvent(IncidentEventType.Escalated, description);
     }
 

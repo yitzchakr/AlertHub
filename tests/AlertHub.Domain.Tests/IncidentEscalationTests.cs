@@ -182,3 +182,113 @@ public class IncidentEscalationRecordingTests
         Assert.Equal(2, incident.Events.Count(e => e.EventType == IncidentEventType.Escalated));
     }
 }
+
+public class EscalationExhaustionTests
+{
+    private static readonly Guid Tenant = Guid.NewGuid();
+
+    private static Incident ATriggeredIncident() =>
+        Incident.Create(Tenant, Guid.NewGuid(), "Checkout down", IncidentSeverity.P1_Critical);
+
+    [Fact]
+    public void A_new_incident_has_not_exhausted_escalation()
+    {
+        Assert.Null(ATriggeredIncident().EscalationExhaustedAt);
+    }
+
+    [Fact]
+    public void RecordEscalationExhausted_stamps_the_incident_and_the_timeline()
+    {
+        var incident = ATriggeredIncident();
+
+        incident.RecordEscalationExhausted("Policy exhausted after tier 3; nobody acknowledged.");
+
+        Assert.NotNull(incident.EscalationExhaustedAt);
+        var escalated = Assert.Single(
+            incident.Events, e => e.EventType == IncidentEventType.Escalated);
+        Assert.Contains("exhausted", escalated.Description);
+    }
+
+    // Throws rather than no-ops so a scan that forgets to exclude exhausted incidents
+    // fails loudly instead of quietly rewriting the timeline every tick.
+    [Fact]
+    public void RecordEscalationExhausted_refuses_a_second_time()
+    {
+        var incident = ATriggeredIncident();
+        incident.RecordEscalationExhausted("first");
+
+        Assert.Throws<DomainException>(() => incident.RecordEscalationExhausted("second"));
+        Assert.Single(incident.Events, e => e.EventType == IncidentEventType.Escalated);
+    }
+
+    [Fact]
+    public void RecordEscalationExhausted_is_refused_once_somebody_has_taken_it()
+    {
+        var incident = ATriggeredIncident();
+        incident.Acknowledge(Guid.NewGuid());
+
+        Assert.Throws<DomainException>(() => incident.RecordEscalationExhausted("too late"));
+        Assert.Null(incident.EscalationExhaustedAt);
+    }
+}
+
+public class EscalationAttemptTests
+{
+    private static IncidentEscalation AClaim() =>
+        IncidentEscalation.Claim(
+            Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 1,
+            new DateTime(2027, 3, 1, 8, 0, 0, DateTimeKind.Utc));
+
+    [Fact]
+    public void A_fresh_claim_has_made_no_attempts()
+    {
+        Assert.Equal(0, AClaim().Attempts);
+    }
+
+    [Fact]
+    public void RecordAttempt_counts_each_try()
+    {
+        var escalation = AClaim();
+
+        escalation.RecordAttempt();
+        escalation.RecordAttempt();
+
+        Assert.Equal(2, escalation.Attempts);
+    }
+
+    [Fact]
+    public void RecordAttempt_is_refused_once_notified()
+    {
+        var escalation = AClaim();
+        escalation.MarkNotified([]);
+
+        Assert.Throws<DomainException>(escalation.RecordAttempt);
+    }
+
+    // The bound on the retry loop. Counting before the send means a crash mid-send still
+    // consumes an attempt, which is what keeps a systematic failure from re-paging forever.
+    [Fact]
+    public void HasGivenUp_becomes_true_only_after_the_budget_is_spent()
+    {
+        var escalation = AClaim();
+
+        Assert.False(escalation.HasGivenUp(3));
+        escalation.RecordAttempt();
+        Assert.False(escalation.HasGivenUp(3));
+        escalation.RecordAttempt();
+        escalation.RecordAttempt();
+        Assert.True(escalation.HasGivenUp(3));
+    }
+
+    [Fact]
+    public void A_notified_escalation_has_never_given_up_however_many_tries_it_took()
+    {
+        var escalation = AClaim();
+        escalation.RecordAttempt();
+        escalation.RecordAttempt();
+        escalation.RecordAttempt();
+        escalation.MarkNotified([]);
+
+        Assert.False(escalation.HasGivenUp(3));
+    }
+}

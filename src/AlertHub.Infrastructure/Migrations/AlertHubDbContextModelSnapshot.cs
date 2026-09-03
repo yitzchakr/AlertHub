@@ -115,6 +115,9 @@ namespace AlertHub.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("EscalationExhaustedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("RawAlertPayload")
                         .HasColumnType("nvarchar(max)");
 
@@ -157,6 +160,9 @@ namespace AlertHub.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("DueAt")
                         .HasColumnType("datetime2");
