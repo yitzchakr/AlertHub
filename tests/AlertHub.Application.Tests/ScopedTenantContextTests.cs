@@ -117,9 +117,8 @@ public class TenantContextRegistrationTests
 {
     private static readonly Guid Tenant = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
-    private static ServiceProvider BuildContainer()
-    {
-        var configuration = new ConfigurationBuilder()
+    private static IConfiguration TestConfiguration() =>
+        new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["ConnectionStrings:AlertHub"] = "Server=none;Database=none;Trusted_Connection=True;",
@@ -130,9 +129,23 @@ public class TenantContextRegistrationTests
             })
             .Build();
 
+    /// <summary>
+    /// Exposed so the escalation tests can assert the real composition root registers what
+    /// their hand-built host registers by hand.
+    /// </summary>
+    public static IReadOnlyList<ServiceDescriptor> InfrastructureDescriptors()
+    {
         var services = new ServiceCollection();
         services.AddLogging();
-        services.AddInfrastructure(configuration);
+        services.AddInfrastructure(TestConfiguration());
+        return services.ToList();
+    }
+
+    private static ServiceProvider BuildContainer()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddInfrastructure(TestConfiguration());
         return services.BuildServiceProvider();
     }
 

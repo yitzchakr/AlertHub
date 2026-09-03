@@ -1,4 +1,6 @@
 using AlertHub.Application.Features.EscalationPolicies;
+using AlertHub.Application.Features.Escalations;
+using AlertHub.Infrastructure.BackgroundServices;
 using AlertHub.Application.Features.OnCall;
 using AlertHub.Application.Interfaces;
 using AlertHub.Infrastructure.Auth;
@@ -72,6 +74,12 @@ namespace AlertHub.Infrastructure;
         // here alongside the other scoped services.
         services.AddScoped<IOnCallResolver, OnCallResolver>();
         services.AddScoped<IEscalationTargetResolver, EscalationTargetResolver>();
+
+        services.Configure<EscalationSettings>(configuration.GetSection("Escalation"));
+        services.AddScoped<INotificationSender, LoggingNotificationSender>();
+        services.AddScoped<IIncidentEscalator, IncidentEscalator>();
+        services.AddScoped<EscalationScanner>();
+        services.AddHostedService<EscalationWorker>();
 
         return services;
     }

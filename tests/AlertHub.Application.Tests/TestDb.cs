@@ -39,6 +39,8 @@ public sealed class TestDb : IDisposable
 
     public Guid IncidentId { get; }
 
+    public Guid PolicyId { get; }
+
     public TestDb()
     {
         _connection = new SqliteConnection("Filename=:memory:");
@@ -79,9 +81,12 @@ public sealed class TestDb : IDisposable
         var mixedTier = policy.AddTier(1, 5);
         var onCallOnlyTier = policy.AddTier(2, 10);
         var directUserTier = policy.AddTier(3, 20);
+        PolicyId = policy.Id;
         MixedTierId = mixedTier.Id;
         OnCallOnlyTierId = onCallOnlyTier.Id;
         DirectUserTierId = directUserTier.Id;
+
+        service.SetEscalationPolicy(policy.Id);
 
         var incident = Incident.Create(
             TenantId, ServiceId, "Checkout returning 500s", IncidentSeverity.P1_Critical);
