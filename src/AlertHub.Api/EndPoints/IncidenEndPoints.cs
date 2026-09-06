@@ -2,6 +2,7 @@ using AlertHub.Application.Common.Models;
 using AlertHub.Application.Features.Incidents;
 using AlertHub.Application.Features.Incidents.AcknowledgeIncident;
 using AlertHub.Application.Features.Incidents.CreateIncident;
+using AlertHub.Application.Features.Incidents.GetIncidentDetail;
 using AlertHub.Application.Features.Incidents.GetIncidentsForService;
 using AlertHub.Application.Features.Incidents.ResolveIncident;
 using AlertHub.Application.Features.Incidents.StartInvestigation;
@@ -31,6 +32,16 @@ public static class IncidentEndPoints
                pageSize ?? 10
             ));
             return TypedResults.Ok(response);
+        });
+
+        // "/detail" rather than the bare id: GET /api/incidents/{serviceId:guid} above already
+        // claims a single guid segment, so a detail route on the same shape would be an
+        // ambiguous match at runtime. The real fix is to move the per-service list to
+        // /api/services/{id}/incidents, which is a breaking change and a separate decision.
+        group.MapGet("/{id:guid}/detail", async (Guid id, IMessageBus bus) =>
+        {
+            var response = await bus.InvokeAsync<IncidentDetailDto?>(new GetIncidentDetailQuery(id));
+            return response is null ? Results.NotFound() : TypedResults.Ok(response);
         });
 
         group.MapPost("/{id:guid}/acknowledge", async (Guid id, AcknowledgeRequest request, IMessageBus bus) =>
