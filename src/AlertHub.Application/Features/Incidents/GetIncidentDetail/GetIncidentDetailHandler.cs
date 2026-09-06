@@ -11,6 +11,10 @@ public static class GetIncidentDetailHandler
         CancellationToken ct) =>
         db.Set<Incident>()
             .Where(i => i.Id == query.IncidentId)
+            // Events, escalations and each escalation's targets are three collections. In a
+            // single query they multiply into a cross product; EF warns about exactly this.
+            // A detail view is read-only, so splitting costs only round trips.
+            .AsSplitQuery()
             .Select(i => new IncidentDetailDto(
                 i.Id,
                 i.ServiceId,

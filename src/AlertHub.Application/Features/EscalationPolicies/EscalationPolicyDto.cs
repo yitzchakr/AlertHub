@@ -15,8 +15,15 @@ public record EscalationTierDto(
     int EscalateAfterMinutes,
     List<EscalationTierAssignmentDto> Assignments);
 
+/// <summary>
+/// Exactly one of the three targeting modes is set. The display name travels with the id
+/// because this is read by someone configuring a policy, and an identifier tells them
+/// nothing about who they just put on the tier.
+/// </summary>
 public record EscalationTierAssignmentDto(
     Guid Id,
     Guid? UserId,
+    string? UserDisplayName,
+    string? UserEmail,
     UserRole? Role,
     bool UseOnCallSchedule);
