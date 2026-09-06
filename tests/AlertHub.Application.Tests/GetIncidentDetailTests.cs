@@ -75,7 +75,7 @@ public class GetIncidentDetailTests
         using var fixture = new TestDb();
         var incident = fixture.Db.Set<Incident>().Single(i => i.Id == fixture.IncidentId);
         incident.RecordEscalation(1, "Escalated to tier 1.");
-        incident.Acknowledge(fixture.ResponderId);
+        incident.Acknowledge(fixture.ResponderId, "Dana Responder");
         fixture.Db.SaveChanges();
         fixture.Db.ChangeTracker.Clear();
 
@@ -157,7 +157,7 @@ public class GetIncidentDetailTests
     {
         using var fixture = new TestDb();
         var incident = fixture.Db.Set<Incident>().Single(i => i.Id == fixture.IncidentId);
-        incident.Acknowledge(fixture.ResponderId);
+        incident.Acknowledge(fixture.ResponderId, "Dana Responder");
         fixture.Db.SaveChanges();
         fixture.Db.ChangeTracker.Clear();
 
@@ -178,5 +178,44 @@ public class GetIncidentDetailTests
         Assert.Single(detail.Events);
         Assert.Null(detail.AcknowledgedByDisplayName);
         Assert.Null(detail.EscalationExhaustedAt);
+    }
+}
+
+/// <summary>
+/// The timeline is the record a person reads afterwards. An identifier in it tells them
+/// nothing, so these assert that names reach the text itself, not merely the structured
+/// fields beside it.
+/// </summary>
+public class IncidentTimelineNamingTests
+{
+    [Fact]
+    public void Acknowledging_names_the_person_rather_than_their_id()
+    {
+        var incident = Incident.Create(
+            Guid.NewGuid(), Guid.NewGuid(), "Checkout down", IncidentSeverity.P1_Critical);
+        var userId = Guid.NewGuid();
+
+        incident.Acknowledge(userId, "Dana Responder");
+
+        var acknowledged = Assert.Single(
+            incident.Events, e => e.EventType == IncidentEventType.Acknowledged);
+
+        Assert.Equal("Acknowledged by Dana Responder", acknowledged.Description);
+        Assert.DoesNotContain(userId.ToString(), acknowledged.Description);
+    }
+
+    [Fact]
+    public async Task An_escalation_event_names_who_it_reached()
+    {
+        using var fixture = new TestDb();
+
+        await IncidentEscalatorTests.EscalateOnce(fixture);
+
+        fixture.Db.ChangeTracker.Clear();
+        var escalated = fixture.Db.Set<IncidentEvent>()
+            .Single(e => e.EventType == IncidentEventType.Escalated);
+
+        Assert.Contains("Dana Responder", escalated.Description);
+        Assert.DoesNotContain("people.", escalated.Description);
     }
 }

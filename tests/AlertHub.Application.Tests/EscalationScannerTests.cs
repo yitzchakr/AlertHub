@@ -235,7 +235,7 @@ public sealed class TestHost : IDisposable
         var responder = db.Set<User>().IgnoreQueryFilters()
             .First(u => u.TenantId == AcmeTenantId);
 
-        incident.Acknowledge(responder.Id);
+        incident.Acknowledge(responder.Id, responder.DisplayName);
         db.SaveChanges();
     }
 

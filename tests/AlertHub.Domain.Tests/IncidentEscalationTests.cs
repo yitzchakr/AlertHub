@@ -153,7 +153,7 @@ public class IncidentEscalationRecordingTests
     public void RecordEscalation_is_refused_once_somebody_has_acknowledged()
     {
         var incident = ATriggeredIncident();
-        incident.Acknowledge(Guid.NewGuid());
+        incident.Acknowledge(Guid.NewGuid(), "Dana Responder");
 
         var ex = Assert.Throws<DomainException>(() => incident.RecordEscalation(2, "too late"));
 
@@ -165,7 +165,7 @@ public class IncidentEscalationRecordingTests
     public void RecordEscalation_is_refused_once_resolved()
     {
         var incident = ATriggeredIncident();
-        incident.Acknowledge(Guid.NewGuid());
+        incident.Acknowledge(Guid.NewGuid(), "Dana Responder");
         incident.Resolve("Rolled back the deploy.");
 
         Assert.Throws<DomainException>(() => incident.RecordEscalation(2, "too late"));
@@ -225,7 +225,7 @@ public class EscalationExhaustionTests
     public void RecordEscalationExhausted_is_refused_once_somebody_has_taken_it()
     {
         var incident = ATriggeredIncident();
-        incident.Acknowledge(Guid.NewGuid());
+        incident.Acknowledge(Guid.NewGuid(), "Dana Responder");
 
         Assert.Throws<DomainException>(() => incident.RecordEscalationExhausted("too late"));
         Assert.Null(incident.EscalationExhaustedAt);
