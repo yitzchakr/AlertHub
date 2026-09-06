@@ -421,3 +421,38 @@ internal sealed class ListLogger<T> : ILogger<T>
         Func<TState, Exception?, string> formatter) =>
         Entries.Add((logLevel, formatter(state, exception)));
 }
+
+public class EmailCredentialValidationTests
+{
+    private static bool IsValid(EmailSettings settings) =>
+        new EmailSettingsValidator().Validate(null, settings).Succeeded;
+
+    private static EmailSettings Enabled(string? username, string? password) =>
+        new()
+        {
+            Enabled = true,
+            Smtp = { Host = "smtp.example.test", Port = 587, Username = username, Password = password },
+        };
+
+    // Authenticating with an empty password is never intentional, so a half-filled
+    // credential is refused at startup rather than attempted at send time.
+    [Fact]
+    public void A_username_without_a_password_fails_startup()
+    {
+        Assert.False(IsValid(Enabled("alerts@example.test", null)));
+        Assert.False(IsValid(Enabled("alerts@example.test", "")));
+    }
+
+    [Fact]
+    public void A_complete_credential_is_accepted()
+    {
+        Assert.True(IsValid(Enabled("alerts@example.test", "secret")));
+    }
+
+    // An unauthenticated relay is normal for a local catcher.
+    [Fact]
+    public void No_credential_at_all_is_accepted()
+    {
+        Assert.True(IsValid(Enabled(null, null)));
+    }
+}

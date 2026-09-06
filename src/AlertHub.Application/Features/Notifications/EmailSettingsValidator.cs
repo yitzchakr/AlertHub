@@ -32,6 +32,16 @@ public class EmailSettingsValidator : IValidateOptions<EmailSettings>
 
             if (options.Smtp.Port is < 1 or > 65535)
                 failures.Add($"Email:Smtp:Port is {options.Smtp.Port}, which is not a valid port.");
+
+            // Authenticating with an empty password is not a thing anyone means to do, so a
+            // half-filled credential is refused rather than attempted.
+            if (!string.IsNullOrWhiteSpace(options.Smtp.Username)
+                && string.IsNullOrEmpty(options.Smtp.Password))
+            {
+                failures.Add(
+                    "Email:Smtp:Password is required when a username is set. Supply it through "
+                  + "user-secrets or the Email__Smtp__Password environment variable.");
+            }
         }
 
         return failures.Count == 0

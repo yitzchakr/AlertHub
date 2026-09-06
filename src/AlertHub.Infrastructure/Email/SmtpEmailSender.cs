@@ -36,7 +36,12 @@ public class SmtpEmailSender(IOptions<EmailSettings> settings) : IEmailSender
             ct);
 
         if (!string.IsNullOrWhiteSpace(options.Smtp.Username))
-            await client.AuthenticateAsync(options.Smtp.Username, options.Smtp.Password, ct);
+        {
+            // Startup validation refuses a username without a password, so this is only ever
+            // empty in a configuration that could not have booted.
+            await client.AuthenticateAsync(
+                options.Smtp.Username, options.Smtp.Password ?? string.Empty, ct);
+        }
 
         await client.SendAsync(mime, ct);
         await client.DisconnectAsync(quit: true, ct);
