@@ -28,7 +28,10 @@ public class LoggingNotificationSender(ILogger<LoggingNotificationSender> logger
             notification.Level, notification.Severity, notification.IncidentId,
             notification.ServiceName, notification.IncidentTitle,
             notification.Recipients.Count,
-            string.Join(", ", notification.Recipients.Select(r => $"{r.DisplayName} [{r.Source}]")));
+            // Addresses included, not just names: this sender stands in for the email one,
+            // so the line has to show exactly who would have been written to.
+            string.Join(", ", notification.Recipients.Select(
+                r => $"{r.DisplayName} <{r.Email}> [{r.Source}]")));
 
         return Task.CompletedTask;
     }

@@ -6,6 +6,7 @@ using AlertHub.Domain.Entities;
 using AlertHub.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
@@ -362,4 +363,61 @@ public class EmailWiringTests
         return directory?.FullName
             ?? throw new InvalidOperationException("Could not locate the repository root.");
     }
+}
+
+/// <summary>
+/// This sender stands in for the email one whenever email is off, which is the default in
+/// development. Its line is therefore the only place a developer can confirm who would have
+/// been written to, so the addresses have to be in it.
+/// </summary>
+public class LoggingNotificationSenderTests
+{
+    private static EscalationNotification ANotification(params EscalationTargetDto[] recipients) =>
+        new(Guid.NewGuid(), "Checkout returning 500s", IncidentSeverity.P1_Critical,
+            Guid.NewGuid(), "Payments API", 2, recipients);
+
+    [Fact]
+    public async Task The_line_names_every_recipient_and_their_address()
+    {
+        var logger = new ListLogger<LoggingNotificationSender>();
+        var sender = new LoggingNotificationSender(logger);
+
+        await sender.SendAsync(
+            ANotification(
+                new EscalationTargetDto(Guid.NewGuid(), "Dana Responder", "dana@acme.test", EscalationTargetSource.OnCall),
+                new EscalationTargetDto(Guid.NewGuid(), "Eli Responder", "eli@acme.test", EscalationTargetSource.Role)),
+            CancellationToken.None);
+
+        var line = Assert.Single(logger.Lines);
+        Assert.Contains("Dana Responder <dana@acme.test> [OnCall]", line);
+        Assert.Contains("Eli Responder <eli@acme.test> [Role]", line);
+    }
+
+    [Fact]
+    public async Task Reaching_nobody_is_reported_as_a_warning()
+    {
+        var logger = new ListLogger<LoggingNotificationSender>();
+        var sender = new LoggingNotificationSender(logger);
+
+        await sender.SendAsync(ANotification(), CancellationToken.None);
+
+        Assert.Contains(logger.Entries, e => e.Level == LogLevel.Warning);
+        Assert.Contains("reached nobody", Assert.Single(logger.Lines));
+    }
+}
+
+internal sealed class ListLogger<T> : ILogger<T>
+{
+    public List<(LogLevel Level, string Message)> Entries { get; } = [];
+
+    public IEnumerable<string> Lines => Entries.Select(e => e.Message);
+
+    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+    public bool IsEnabled(LogLevel logLevel) => true;
+
+    public void Log<TState>(
+        LogLevel logLevel, EventId eventId, TState state, Exception? exception,
+        Func<TState, Exception?, string> formatter) =>
+        Entries.Add((logLevel, formatter(state, exception)));
 }
