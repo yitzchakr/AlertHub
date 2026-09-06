@@ -15,6 +15,8 @@ public static class IncidentEndPoints
 {
     public static void MapIncidentEndpoints(this WebApplication app)
     {
+        app.MapServiceIncidents();
+
         var group = app.MapGroup("/api/incidents").WithTags("Incidents");
 
         group.MapPost("/", async (CreateIncidentCommand command, IMessageBus bus) =>
@@ -23,22 +25,7 @@ public static class IncidentEndPoints
             return TypedResults.Created($"/api/incidents/{response.IncidentId}", response);
         });
 
-        group.MapGet("/{serviceId:guid}", async (Guid serviceId, int? page, int? pageSize, IMessageBus bus) =>
-        {
-            var response = await bus.InvokeAsync<PagedResult<IncidentSummaryDto>>(new GetIncidentsForServiceQuery
-            (
-               serviceId,
-               page ?? 1,
-               pageSize ?? 10
-            ));
-            return TypedResults.Ok(response);
-        });
-
-        // "/detail" rather than the bare id: GET /api/incidents/{serviceId:guid} above already
-        // claims a single guid segment, so a detail route on the same shape would be an
-        // ambiguous match at runtime. The real fix is to move the per-service list to
-        // /api/services/{id}/incidents, which is a breaking change and a separate decision.
-        group.MapGet("/{id:guid}/detail", async (Guid id, IMessageBus bus) =>
+        group.MapGet("/{id:guid}", async (Guid id, IMessageBus bus) =>
         {
             var response = await bus.InvokeAsync<IncidentDetailDto?>(new GetIncidentDetailQuery(id));
             return response is null ? Results.NotFound() : TypedResults.Ok(response);
@@ -64,6 +51,28 @@ public static class IncidentEndPoints
         {
             await bus.InvokeAsync(new ResolveIncidentCommand(id, request.Resolution));
             return Results.NoContent();
+        });
+    }
+
+    /// <summary>
+    /// A service's incidents are a sub-collection of that service, which is why this is not
+    /// under /api/incidents. It previously was, as GET /api/incidents/{serviceId}, and that
+    /// claimed the single-guid route the incident itself should own — so incident detail had
+    /// to live at an awkward /detail suffix to avoid an ambiguous match.
+    ///
+    /// Kept in this file rather than ServiceEndpoints so every incident route stays in one
+    /// place, and tagged Incidents so the API docs group it with the rest.
+    /// </summary>
+    private static void MapServiceIncidents(this WebApplication app)
+    {
+        var group = app.MapGroup("/api/services/{serviceId:guid}/incidents").WithTags("Incidents");
+
+        group.MapGet("/", async (Guid serviceId, int? page, int? pageSize, IMessageBus bus) =>
+        {
+            var response = await bus.InvokeAsync<PagedResult<IncidentSummaryDto>>(
+                new GetIncidentsForServiceQuery(serviceId, page ?? 1, pageSize ?? 10));
+
+            return TypedResults.Ok(response);
         });
     }
 }
