@@ -21,6 +21,11 @@ public class IncidentEscalatorTests
             sender,
             Options.Create(new EscalationSettings { MaxSendAttempts = maxSendAttempts }));
 
+    /// <summary>Shared with the timeline-naming tests, which assert on what it writes.</summary>
+    internal static Task<EscalationOutcome> EscalateOnce(TestDb fixture) =>
+        EscalatorFor(fixture, new RecordingSender())
+            .EscalateAsync(fixture.IncidentId, CreatedAtOf(fixture), CancellationToken.None);
+
     private static DateTime CreatedAtOf(TestDb fixture) =>
         fixture.Db.Set<Incident>().Single(i => i.Id == fixture.IncidentId).CreatedAt;
 
@@ -137,7 +142,7 @@ public class IncidentEscalatorTests
     {
         using var fixture = new TestDb();
         var incident = fixture.Db.Set<Incident>().Single(i => i.Id == fixture.IncidentId);
-        incident.Acknowledge(fixture.ResponderId);
+        incident.Acknowledge(fixture.ResponderId, "Dana Responder");
         if (alsoResolve) incident.Resolve("Rolled back.");
         fixture.Db.SaveChanges();
 
@@ -379,7 +384,7 @@ public class IncidentEscalatorTests
         Assert.Contains("tenant-scoped", ex.Message);
     }
 
-    private sealed class RecordingSender : INotificationSender
+    internal sealed class RecordingSender : INotificationSender
     {
         public List<EscalationNotification> Sent { get; } = [];
         public Exception? ThrowOnSend { get; set; }

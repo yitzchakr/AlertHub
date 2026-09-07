@@ -61,8 +61,14 @@ public class EscalationWorker(
 
             var summary = await scanner.RunAsync(DateTime.UtcNow, stoppingToken);
 
+            // A pass that only waited is noise in production and reassurance in
+            // development, so it is logged either way and the level decides who sees it.
+            // Without the quiet line, a worker with nothing to do is indistinguishable
+            // from one that has died.
             if (summary.HasNews)
                 logger.LogInformation("Escalation pass: {Summary}", summary);
+            else
+                logger.LogDebug("Escalation pass, nothing due: {Summary}", summary);
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
         {

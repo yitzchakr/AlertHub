@@ -12,6 +12,10 @@ public static class GetEscalationPolicyByIdHandler
     {
         return await db.Set<EscalationPolicy>()
             .Where(p => p.Id == query.PolicyId)
+            // Tiers and their assignments are two nested collections, which a single query
+            // would return as a cross product. Read-only, so the extra round trips cost
+            // nothing that matters.
+            .AsSplitQuery()
             .Select(p => new EscalationPolicyDetailDto(
                 p.Id,
                 p.Name,
@@ -22,6 +26,8 @@ public static class GetEscalationPolicyByIdHandler
                     t.Assignments.Select(a => new EscalationTierAssignmentDto(
                         a.Id,
                         a.UserId,
+                        a.User != null ? a.User.DisplayName : null,
+                        a.User != null ? a.User.Email : null,
                         a.Role,
                         a.UseOnCallSchedule
                     )).ToList()

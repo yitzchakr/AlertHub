@@ -57,7 +57,11 @@ public class Incident : ITenantEntity
 
     // --- State transition methods with guard clauses ---
 
-    public void Acknowledge(Guid userId)
+    /// <summary>
+    /// The display name is required rather than derived, because the timeline is read by
+    /// people and an identifier tells them nothing. The id is still what is stored.
+    /// </summary>
+    public void Acknowledge(Guid userId, string acknowledgedBy)
     {
         if (Status != IncidentStatus.Triggered)
             throw new InvalidOperationException(
@@ -66,7 +70,7 @@ public class Incident : ITenantEntity
         Status = IncidentStatus.Acknowledged;
         AcknowledgedAt = DateTime.UtcNow;
         AcknowledgedByUserId = userId;
-        AddEvent(IncidentEventType.Acknowledged, $"Acknowledged by user {userId}");
+        AddEvent(IncidentEventType.Acknowledged, $"Acknowledged by {acknowledgedBy}");
     }
 
     public void StartInvestigation()

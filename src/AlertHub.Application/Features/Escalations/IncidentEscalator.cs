@@ -1,3 +1,4 @@
+using AlertHub.Application.Features.EscalationPolicies;
 using AlertHub.Application.Interfaces;
 using AlertHub.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -157,19 +158,36 @@ public class IncidentEscalator(
         // The status was checked on load, so an acknowledgement arriving in between is a
         // race this cannot close without locking: a page goes out just as somebody takes
         // the incident. The domain guard reads the loaded status and lets it through.
-        context.Incident.RecordEscalation(escalation.Level, DescribeSend(context, escalation, targets.Count));
+        context.Incident.RecordEscalation(escalation.Level, DescribeSend(context, escalation, targets));
 
         await db.SaveChangesAsync(ct);
 
         return targets.Count == 0 ? EscalationOutcome.ReachedNobody : EscalationOutcome.Notified;
     }
 
+    /// <summary>
+    /// Names the people reached rather than counting them: the timeline is the record a
+    /// human reads afterwards, and "reaching 3 people" answers none of the questions they
+    /// will have. Capped so a large role sweep cannot turn one event into an essay.
+    /// </summary>
     private static string DescribeSend(
-        EscalationContext context, IncidentEscalation escalation, int targetCount) =>
-        targetCount == 0
-            ? $"Escalated to tier {escalation.Level} of '{context.Policy.Name}', which reached nobody."
-            : $"Escalated to tier {escalation.Level} of '{context.Policy.Name}', reaching "
-              + $"{targetCount} {(targetCount == 1 ? "person" : "people")}.";
+        EscalationContext context,
+        IncidentEscalation escalation,
+        IReadOnlyList<EscalationTargetDto> targets)
+    {
+        var prefix = $"Escalated to tier {escalation.Level} of '{context.Policy.Name}'";
+
+        if (targets.Count == 0)
+            return $"{prefix}, which reached nobody.";
+
+        const int NamesToList = 5;
+        var named = string.Join(", ", targets.Take(NamesToList).Select(t => t.DisplayName));
+        var remaining = targets.Count - NamesToList;
+
+        return remaining > 0
+            ? $"{prefix}, reaching {named} and {remaining} more."
+            : $"{prefix}, reaching {named}.";
+    }
 
     /// <summary>
     /// The first tier is due as soon as the incident exists. Every later tier is due its
