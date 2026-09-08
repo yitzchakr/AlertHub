@@ -1,4 +1,4 @@
-using AlertHub.Application.Features.EscalationPolicies;
+﻿using AlertHub.Application.Features.EscalationPolicies;
 using AlertHub.Application.Features.Escalations;
 using AlertHub.Application.Features.Notifications;
 using AlertHub.Infrastructure.Email;
@@ -24,7 +24,13 @@ namespace AlertHub.Infrastructure;
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services, IConfiguration configuration)
     {
-        services.Configure<JwtSettings>(configuration.GetSection("Jwt"));
+        // Validated at host start, so a clone with no signing key configured refuses to boot
+        // with a message naming the setting instead of failing on the first sign-in.
+        services.AddOptions<JwtSettings>()
+            .Bind(configuration.GetSection("Jwt"))
+            .ValidateOnStart();
+
+        services.AddSingleton<IValidateOptions<JwtSettings>, JwtSettingsValidator>();
 
         services.AddDbContext<DbContext, AlertHubDbContext>(options =>
             options.UseSqlServer(
@@ -32,30 +38,38 @@ namespace AlertHub.Infrastructure;
                 sql => sql.MigrationsAssembly(typeof(AlertHubDbContext).Assembly.FullName))
                   );
 
-        var jwtSettings = configuration.GetSection("Jwt").Get<JwtSettings>()!;
-
         services.AddAuthentication(options =>
         {
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
             options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
         })
-        .AddJwtBearer(options =>
-        {
-            options.MapInboundClaims = false;
-            options.TokenValidationParameters = new TokenValidationParameters
+        .AddJwtBearer();
+
+        // Configured through the options pipeline rather than inline, because the inline form
+        // needed its own configuration.GetSection("Jwt").Get<JwtSettings>() at registration
+        // time — a second bind that ran before ValidateOnStart and so could never benefit from
+        // it. Taking IOptions<JwtSettings> here means the bearer scheme and TokenService read
+        // one validated instance, and a bad key is reported at startup by the validator.
+        services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+            .Configure<IOptions<JwtSettings>>((bearer, jwt) =>
             {
-                ValidateIssuer = true,
-                ValidateAudience = true,
-                ValidateLifetime = true,
-                ValidateIssuerSigningKey = true,
-                ValidIssuer = jwtSettings.Issuer,
-                ValidAudience = jwtSettings.Audience,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey)),
-                RoleClaimType = "role",
-                NameClaimType = "sub"
-            };
-          
-        });
+                var settings = jwt.Value;
+
+                bearer.MapInboundClaims = false;
+                bearer.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = settings.Issuer,
+                    ValidAudience = settings.Audience,
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(settings.SecretKey)),
+                    RoleClaimType = "role",
+                    NameClaimType = "sub"
+                };
+            });
 
         services.AddAuthorization(options =>
         {
