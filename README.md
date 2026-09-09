@@ -62,6 +62,11 @@ registration endpoint** — only `POST /api/auth/login` and `/refresh`. On a fre
 insert a user directly with a BCrypt hash in `PasswordHash` (the app hashes with
 `BCryptPasswordHasher`), matching the GUIDs at the top of `seed.sql`, then run the script.
 
+That first row needs both role columns — `PermissionRole` for what they may do and
+`EscalationRole` for which sweep pages them (see [Two kinds of role](#two-kinds-of-role)) —
+and `PermissionRole` must be `'Admin'` on at least one of them, since creating any further
+user is an Admin-only endpoint.
+
 The roster is anchored to a daily 08:00 UTC handoff relative to *today*, so it still covers
 "now" whenever you get round to reading it.
 
@@ -134,11 +139,43 @@ the first sign-in or the first page.
 dotnet test
 ```
 
-231 tests across three projects. Application tests run against SQLite in-memory with two
+261 tests across three projects. Application tests run against SQLite in-memory with two
 seeded tenants, so tenant isolation is asserted rather than assumed. Where a rule exists in
 both C# and SQL — the half-open `[Start, End)` on-call window, for instance —
 `OnCallShiftQueriesTests` asserts the two agree, because a filter that drifts from the
 in-memory predicate is a bug no single-sided test would catch.
+
+## Two kinds of role
+
+A user carries two roles, and conflating them is a mistake this codebase made once.
+
+| Column | Answers | Read by |
+| --- | --- | --- |
+| `PermissionRole` | What may this person do? | The `role` claim, every `RequireRole` |
+| `EscalationRole` | Who does a role-targeting tier page? | `EscalationTargetResolver` |
+
+They were one field. Granting somebody Admin so they could edit a policy also added them to
+every tier that paged Admin, and demoting somebody could empty a tier nobody was watching —
+both through a screen that said nothing about paging. The values still overlap, because the
+migration copies the old column into the new one so no existing rota changes, but nothing
+keeps them aligned from here.
+
+## Leavers
+
+There is no delete. `User.DeactivatedAt` records a departure, and the schema is the reason:
+`EscalationTierAssignment.UserId` is `Restrict`, so anybody named on a tier could not be
+deleted anyway, and `Incident.AcknowledgedByUserId` is `SetNull`, so a delete would quietly
+rewrite answered incidents into unanswered ones.
+
+Deactivating revokes the refresh token, drops the user out of role sweeps and direct tier
+targets, and makes their on-call shifts resolve to nobody rather than to a name that will
+never answer. An access token already issued still stands until it expires — at most
+`Jwt:AccessTokenExpirationMinutes` — which is the standing cost of validating tokens without
+a round trip.
+
+A tier left reaching nobody is not an error here; it is the state `EscalationTargetResolver`
+exists to make visible, and `GET /api/escalation-policies/{id}/tiers/{tierId}/targets`
+answers it before an outage does.
 
 ## Notable design notes
 

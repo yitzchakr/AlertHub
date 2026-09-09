@@ -15,7 +15,7 @@ public static class UpdateOnCallShiftHandler
             .FirstOrDefaultAsync(s => s.Id == command.ShiftId, ct)
             ?? throw NotFoundException.For<OnCallShift>(command.ShiftId);
 
-        if (!await db.Set<User>().AnyAsync(u => u.Id == command.UserId, ct))
+        if (!await db.Set<User>().AnyAsync(u => u.Id == command.UserId && u.DeactivatedAt == null, ct))
             throw NotFoundException.For<User>(command.UserId);
 
         var window = TimeWindow.Create(command.StartUtc, command.EndUtc);

@@ -7,4 +7,5 @@ public record UserSummaryDto(
     string DisplayName,
     string Email,
     PermissionRole PermissionRole,
-    EscalationRole EscalationRole);
+    EscalationRole EscalationRole,
+    DateTime? DeactivatedAt);

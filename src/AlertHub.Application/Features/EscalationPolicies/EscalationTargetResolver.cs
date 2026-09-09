@@ -66,6 +66,9 @@ public class EscalationTargetResolver(DbContext db, IOnCallResolver onCall) : IE
         EscalationTargetSource source,
         CancellationToken ct) =>
         db.Set<User>()
+            // Deactivated people are excluded here rather than at each call site, so a
+            // departure cannot leak back in through whichever targeting mode was missed.
+            .Where(u => u.DeactivatedAt == null)
             .Where(predicate)
             .Select(u => new EscalationTargetDto(u.Id, u.DisplayName, u.Email, source))
             .ToListAsync(ct);

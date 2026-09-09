@@ -15,7 +15,11 @@ public static class LoginHandler
         var user = await db.Set<User>()
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(u => u.Email == command.Email, ct);
-        if (user == null || !passwordHasher.Verify(command.Password, user.PasswordHash))
+        // A deactivated account fails with the same message as a wrong password: whether
+        // an address still works here is not something an unauthenticated caller needs told.
+        if (user == null
+            || user.DeactivatedAt is not null
+            || !passwordHasher.Verify(command.Password, user.PasswordHash))
         {
             throw new UnauthorizedAccessException("Invalid email or password.");
         }

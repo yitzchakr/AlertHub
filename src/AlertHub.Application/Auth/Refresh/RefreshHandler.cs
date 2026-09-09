@@ -18,7 +18,12 @@ public static class RefreshHandler
         var user = await db.Set<User>()
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(u => u.Id == userId, ct);
-        if (user == null || user.RefreshToken != command.RefreshToken || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
+        // Deactivate revokes the stored token, so this is belt and braces — but it is the
+        // check that holds if a token is ever reinstated by another path.
+        if (user == null
+            || user.DeactivatedAt is not null
+            || user.RefreshToken != command.RefreshToken
+            || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
         {
             if (user != null)
             {
