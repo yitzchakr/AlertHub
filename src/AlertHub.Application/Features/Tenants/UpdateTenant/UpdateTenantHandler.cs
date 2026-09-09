@@ -1,3 +1,4 @@
+using AlertHub.Application.Interfaces;
 using AlertHub.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,11 +9,19 @@ public static class UpdateTenantHandler
     public static async Task<TenantSummaryDto?> HandleAsync(
         UpdateTenantCommand command,
         DbContext db,
+        ITenantContext tenantContext,
         CancellationToken ct)
     {
+        var tenantId = tenantContext.TenantId
+            ?? throw new InvalidOperationException("Tenant context is required.");
+
+        // Renaming somebody else's tenant is not a 403 here but a 404: the caller is not
+        // told whether the id exists.
+        if (command.Id != tenantId)
+            return null;
+
         var tenant = await db.Set<Tenant>()
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(t => t.Id == command.Id, ct);
+            .FirstOrDefaultAsync(t => t.Id == tenantId, ct);
 
         if (tenant is null)
             return null;

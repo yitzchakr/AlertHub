@@ -1,8 +1,5 @@
 using AlertHub.Application.Features.Users;
 using AlertHub.Application.Features.Users.GetUsers;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Wolverine;
 
 namespace AlertHub.Api.EndPoints;
@@ -20,12 +17,18 @@ public static class UserEndpoints
             var response = await bus.InvokeAsync<List<UserSummaryDto>>(new GetUsersQuery());
             return TypedResults.Ok(response);
         });
+
+        // Creating a user grants access, so it is an Admin operation. The tenant is taken
+        // from the caller's token rather than the body: a caller who could name the tenant
+        // could create an account inside someone else's, which is the boundary the global
+        // query filter exists to hold. Rate limited because account creation is the kind of
+        // endpoint worth hammering even behind a credential.
         group.MapPost("/", async (CreateUserCommand command, IMessageBus bus) =>
         {
             var response = await bus.InvokeAsync<CreateUserResponse>(command);
             return TypedResults.Created($"/api/users/{response.Id}", response);
-        }).AllowAnonymous();
-        //RequireAuthorization(policy => policy.RequireRole("Admin"))
-        //.RequireRateLimiting(RateLimitPolicies.CreateUser);
+        })
+        .RequireAuthorization(policy => policy.RequireRole("Admin"))
+        .RequireRateLimiting(RateLimitPolicies.CreateUser);
     }
 }

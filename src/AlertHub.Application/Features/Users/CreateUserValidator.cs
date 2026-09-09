@@ -30,8 +30,5 @@ public class CreateUserValidator:AbstractValidator<CreateUserCommand>
         RuleFor(x => x.Role)
             .IsInEnum()
             .WithMessage("Role must be a valid UserRole");
-        RuleFor(x => x.TenantId)
-            .NotEmpty()
-            .WithMessage("Tenant Id required for creation of user");
     }
 }
