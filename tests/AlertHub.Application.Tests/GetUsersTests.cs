@@ -17,8 +17,8 @@ public class GetUsersTests
         var users = await Users(fixture);
 
         Assert.Equal(3, users.Count);
-        Assert.Contains(users, u => u.DisplayName == "Avery Admin" && u.Role == UserRole.Admin);
-        Assert.Contains(users, u => u.Email == "dana@acme.test" && u.Role == UserRole.Responder);
+        Assert.Contains(users, u => u.DisplayName == "Avery Admin" && u.PermissionRole == PermissionRole.Admin);
+        Assert.Contains(users, u => u.Email == "dana@acme.test" && u.EscalationRole == EscalationRole.Responder);
     }
 
     // This endpoint exists so a rota can be built, which means it hands back people. The one

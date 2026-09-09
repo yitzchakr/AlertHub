@@ -28,11 +28,18 @@ public static class CreateUserHandler
         }
 
         var passwordHash = passwordHasher.Hash(command.Password);
-        var user = User.Create(tenantId, command.Email, command.DisplayName, passwordHash, command.Role);
+        var user = User.Create(
+            tenantId,
+            command.Email,
+            command.DisplayName,
+            passwordHash,
+            command.PermissionRole,
+            command.EscalationRole);
 
         db.Add(user);
         await db.SaveChangesAsync(ct);
 
-        return new CreateUserResponse(user.Id, user.DisplayName, user.Role, user.CreatedAt);
+        return new CreateUserResponse(
+            user.Id, user.DisplayName, user.PermissionRole, user.EscalationRole, user.CreatedAt);
     }
 }

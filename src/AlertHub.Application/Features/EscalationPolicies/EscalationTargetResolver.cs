@@ -12,7 +12,7 @@ public class EscalationTargetResolver(DbContext db, IOnCallResolver onCall) : IE
     {
         var assignments = await db.Set<EscalationTierAssignment>()
             .Where(a => a.EscalationTierId == tierId)
-            .Select(a => new { a.UserId, a.Role, a.UseOnCallSchedule })
+            .Select(a => new { a.UserId, a.EscalationRole, a.UseOnCallSchedule })
             .ToListAsync(ct);
 
         // One person can be reached by more than one assignment. First source wins, in
@@ -35,15 +35,15 @@ public class EscalationTargetResolver(DbContext db, IOnCallResolver onCall) : IE
         }
 
         var roles = assignments
-            .Where(a => a.Role.HasValue)
-            .Select(a => a.Role!.Value)
+            .Where(a => a.EscalationRole.HasValue)
+            .Select(a => a.EscalationRole!.Value)
             .Distinct()
             .ToList();
 
         if (roles.Count > 0)
         {
             foreach (var target in await LoadUsersAsync(
-                u => roles.Contains(u.Role), EscalationTargetSource.Role, ct))
+                u => roles.Contains(u.EscalationRole), EscalationTargetSource.Role, ct))
             {
                 targets.TryAdd(target.UserId, target);
             }

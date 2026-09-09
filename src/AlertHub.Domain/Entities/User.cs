@@ -1,16 +1,18 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace AlertHub.Domain.Entities;
 
-    public class User : ITenantEntity
-    {
+public class User : ITenantEntity
+{
     public Guid Id { get; private set; }
     public Guid TenantId { get; private set; }
     public string Email { get; private set; } = default!;
     public string DisplayName { get; private set; } = default!;
-    public UserRole Role { get; private set; }
+
+    /// <summary>What this user may do. Drives the "role" claim and every RequireRole check.</summary>
+    public PermissionRole PermissionRole { get; private set; }
+
+    /// <summary>Which role sweep pages this user. Independent of what they may do.</summary>
+    public EscalationRole EscalationRole { get; private set; }
+
     public string PasswordHash { get; private set; } = default!;
     public DateTime CreatedAt { get; private set; }
     public string? RefreshToken { get; private set; }
@@ -22,7 +24,13 @@ namespace AlertHub.Domain.Entities;
 
     private User() { }
 
-    public static User Create(Guid tenantId, string email, string displayName,string passwordHash, UserRole role)
+    public static User Create(
+        Guid tenantId,
+        string email,
+        string displayName,
+        string passwordHash,
+        PermissionRole permissionRole,
+        EscalationRole escalationRole)
     {
         return new User
         {
@@ -31,20 +39,21 @@ namespace AlertHub.Domain.Entities;
             Email = email,
             DisplayName = displayName,
             PasswordHash = passwordHash,
-            Role = role,
+            PermissionRole = permissionRole,
+            EscalationRole = escalationRole,
             CreatedAt = DateTime.UtcNow
         };
     }
+
     public void SetRefreshToken(string token, DateTime expiry)
     {
         RefreshToken = token;
         RefreshTokenExpiryTime = expiry;
     }
+
     public void RevokeRefreshToken()
     {
         RefreshToken = null;
         RefreshTokenExpiryTime = null;
     }
-
 }
-

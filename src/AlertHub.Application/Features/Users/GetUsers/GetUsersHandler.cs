@@ -16,6 +16,7 @@ public static class GetUsersHandler
         CancellationToken ct) =>
         await db.Set<User>()
             .OrderBy(u => u.DisplayName)
-            .Select(u => new UserSummaryDto(u.Id, u.DisplayName, u.Email, u.Role))
+            .Select(u => new UserSummaryDto(
+                u.Id, u.DisplayName, u.Email, u.PermissionRole, u.EscalationRole))
             .ToListAsync(ct);
 }

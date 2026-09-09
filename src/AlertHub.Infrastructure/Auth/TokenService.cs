@@ -22,7 +22,7 @@ public class TokenService(IOptions<JwtSettings> jwtSettings) : ITokenService
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new Claim(JwtRegisteredClaimNames.Email, user.Email),
             new Claim("tenantId", user.TenantId.ToString()),
-            new Claim("role", user.Role.ToString())
+            new Claim("role", user.PermissionRole.ToString())
         };
         var token = new JwtSecurityToken(
             issuer: _settings.Issuer,

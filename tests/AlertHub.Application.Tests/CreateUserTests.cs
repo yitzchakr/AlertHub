@@ -14,9 +14,10 @@ public class CreateUserTests
 {
     private static Task<CreateUserResponse> Create(
         TestDb fixture, string email, string displayName = "New Person",
-        UserRole role = UserRole.Responder) =>
+        PermissionRole permissionRole = PermissionRole.Responder,
+        EscalationRole escalationRole = EscalationRole.Responder) =>
         CreateUserHandler.HandleAsync(
-            new CreateUserCommand(displayName, "Sup3rSecret", email, role),
+            new CreateUserCommand(displayName, "Sup3rSecret", email, permissionRole, escalationRole),
             fixture.Db,
             fixture.TenantContext,
             new PassThroughHasher(),

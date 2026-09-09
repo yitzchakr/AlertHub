@@ -28,7 +28,7 @@ public static class GetEscalationPolicyByIdHandler
                         a.UserId,
                         a.User != null ? a.User.DisplayName : null,
                         a.User != null ? a.User.Email : null,
-                        a.Role,
+                        a.EscalationRole,
                         a.UseOnCallSchedule
                     )).ToList()
                 )).ToList()

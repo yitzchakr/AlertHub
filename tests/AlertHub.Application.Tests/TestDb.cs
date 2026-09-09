@@ -68,11 +68,18 @@ public sealed class TestDb : IDisposable
         SecondServiceId = secondService.Id;
         OtherTenantServiceId = otherService.Id;
 
-        var admin = User.Create(TenantId, "admin@acme.test", "Avery Admin", "hash", UserRole.Admin);
-        var responder = User.Create(TenantId, "dana@acme.test", "Dana Responder", "hash", UserRole.Responder);
-        var secondResponder = User.Create(TenantId, "eli@acme.test", "Eli Responder", "hash", UserRole.Responder);
+        var admin = User.Create(
+            TenantId, "admin@acme.test", "Avery Admin", "hash",
+            PermissionRole.Admin, EscalationRole.Admin);
+        var responder = User.Create(
+            TenantId, "dana@acme.test", "Dana Responder", "hash",
+            PermissionRole.Responder, EscalationRole.Responder);
+        var secondResponder = User.Create(
+            TenantId, "eli@acme.test", "Eli Responder", "hash",
+            PermissionRole.Responder, EscalationRole.Responder);
         var otherTenantResponder = User.Create(
-            OtherTenantId, "zoe@globex.test", "Zoe Outsider", "hash", UserRole.Responder);
+            OtherTenantId, "zoe@globex.test", "Zoe Outsider", "hash",
+            PermissionRole.Responder, EscalationRole.Responder);
         AdminId = admin.Id;
         ResponderId = responder.Id;
         SecondResponderId = secondResponder.Id;
@@ -99,7 +106,7 @@ public sealed class TestDb : IDisposable
         Db.Add(incident);
         Db.AddRange(
             EscalationTierAssignment.ForOnCall(MixedTierId, TenantId),
-            EscalationTierAssignment.ForRole(MixedTierId, TenantId, UserRole.Responder),
+            EscalationTierAssignment.ForRole(MixedTierId, TenantId, EscalationRole.Responder),
             EscalationTierAssignment.ForOnCall(OnCallOnlyTierId, TenantId),
             EscalationTierAssignment.ForUser(DirectUserTierId, TenantId, AdminId));
         Db.SaveChanges();
@@ -111,6 +118,21 @@ public sealed class TestDb : IDisposable
     public void AsTenant(Guid? tenantId) => _tenantContext.TenantId = tenantId;
 
     public ITenantContext TenantContext => _tenantContext;
+
+    /// <summary>
+    /// Adds a person to the current tenant. Takes both roles separately so a test can set
+    /// up the combinations the fixture's three people do not cover — an Admin who is not
+    /// paged as one, for instance.
+    /// </summary>
+    public User AddUser(
+        string email, string displayName, PermissionRole permissionRole, EscalationRole escalationRole)
+    {
+        var user = User.Create(TenantId, email, displayName, "hash", permissionRole, escalationRole);
+
+        Db.Add(user);
+        Db.SaveChanges();
+        return user;
+    }
 
     public OnCallShift AddShift(Guid serviceId, Guid userId, DateTime startUtc, DateTime endUtc)
     {

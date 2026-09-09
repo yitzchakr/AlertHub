@@ -29,9 +29,9 @@ public static class AddAssignmentHandler
         {
             assignment = EscalationTierAssignment.ForUser(tier.Id, tenantId, command.UserId.Value);
         }
-        else if (command.Role.HasValue)
+        else if (command.EscalationRole.HasValue)
         {
-            assignment = EscalationTierAssignment.ForRole(tier.Id, tenantId, command.Role.Value);
+            assignment = EscalationTierAssignment.ForRole(tier.Id, tenantId, command.EscalationRole.Value);
         }
         else
         {

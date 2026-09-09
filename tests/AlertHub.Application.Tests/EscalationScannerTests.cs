@@ -190,7 +190,7 @@ public sealed class TestHost : IDisposable
         var service = Service.Create(tenant.Id, serviceName);
         var responder = User.Create(
             tenant.Id, $"responder@{tenantName}.test", $"{tenantName} Responder", "hash",
-            UserRole.Responder);
+            PermissionRole.Responder, EscalationRole.Responder);
 
         var policy = EscalationPolicy.Create(tenant.Id, $"{tenantName} Critical");
         var tier1 = policy.AddTier(1, 5);
@@ -202,7 +202,7 @@ public sealed class TestHost : IDisposable
             tenant.Id, service.Id, $"{serviceName} is failing", IncidentSeverity.P1_Critical);
 
         db.AddRange(tenant, service, responder, policy, incident);
-        db.Add(EscalationTierAssignment.ForRole(tier1.Id, tenant.Id, UserRole.Responder));
+        db.Add(EscalationTierAssignment.ForRole(tier1.Id, tenant.Id, EscalationRole.Responder));
         db.SaveChanges();
 
         return (tenant.Id, service.Id, incident.Id);

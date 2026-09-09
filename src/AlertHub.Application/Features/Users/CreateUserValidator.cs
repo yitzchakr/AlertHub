@@ -27,8 +27,11 @@ public class CreateUserValidator:AbstractValidator<CreateUserCommand>
             .MinimumLength(8)
             .Matches(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$")
             .WithMessage("Password  must be at least 8 characters long and contain at least one lowercase, one uppercase, and one digit");
-        RuleFor(x => x.Role)
+        RuleFor(x => x.PermissionRole)
             .IsInEnum()
-            .WithMessage("Role must be a valid UserRole");
+            .WithMessage("Permission role must be a valid PermissionRole");
+        RuleFor(x => x.EscalationRole)
+            .IsInEnum()
+            .WithMessage("Escalation role must be a valid EscalationRole");
     }
 }
