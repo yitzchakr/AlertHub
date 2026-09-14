@@ -21,7 +21,7 @@ public static class CreateOnCallShiftHandler
         if (!await db.Set<Service>().AnyAsync(s => s.Id == command.ServiceId, ct))
             throw NotFoundException.For<Service>(command.ServiceId);
 
-        if (!await db.Set<User>().AnyAsync(u => u.Id == command.UserId, ct))
+        if (!await db.Set<User>().AnyAsync(u => u.Id == command.UserId && u.DeactivatedAt == null, ct))
             throw NotFoundException.For<User>(command.UserId);
 
         var window = TimeWindow.Create(command.StartUtc, command.EndUtc);

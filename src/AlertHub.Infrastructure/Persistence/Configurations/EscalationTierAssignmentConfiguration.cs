@@ -9,7 +9,7 @@ public class EscalationTierAssignmentConfiguration : IEntityTypeConfiguration<Es
     public void Configure(EntityTypeBuilder<EscalationTierAssignment> builder)
     {
         builder.HasKey(a => a.Id);
-        builder.Property(a => a.Role).HasConversion<string>();
+        builder.Property(a => a.EscalationRole).HasConversion<string>();
         builder.Property(a => a.UseOnCallSchedule).HasDefaultValue(false);
 
         builder.HasOne(a => a.User)

@@ -10,7 +10,7 @@ public class AddAssignmentValidator : AbstractValidator<AddAssignmentCommand>
             .NotEmpty();
 
         RuleFor(x => x)
-            .Must(x => x.UseOnCallSchedule || x.UserId.HasValue || x.Role.HasValue)
+            .Must(x => x.UseOnCallSchedule || x.UserId.HasValue || x.EscalationRole.HasValue)
             .WithMessage("Assignment must target a user, a role, or the on-call schedule.");
     }
 }

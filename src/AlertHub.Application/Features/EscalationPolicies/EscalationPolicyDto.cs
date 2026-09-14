@@ -25,5 +25,5 @@ public record EscalationTierAssignmentDto(
     Guid? UserId,
     string? UserDisplayName,
     string? UserEmail,
-    UserRole? Role,
+    EscalationRole? EscalationRole,
     bool UseOnCallSchedule);

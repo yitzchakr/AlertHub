@@ -61,11 +61,11 @@ public static class EscalationPolicyEndpoints
         group.MapPost("/{id:guid}/tiers/{tierId:guid}/assignments", async (Guid id, Guid tierId, AddAssignmentRequest request, IMessageBus bus) =>
         {
             var response = await bus.InvokeAsync<AddAssignmentResponse>(
-                new AddAssignmentCommand(tierId, request.UserId, request.Role, request.UseOnCallSchedule));
+                new AddAssignmentCommand(tierId, request.UserId, request.EscalationRole, request.UseOnCallSchedule));
             return TypedResults.Created($"/api/escalation-policies/{id}", response);
         });
     }
 }
 
 public record AddTierRequest(int Level, int EscalateAfterMinutes);
-public record AddAssignmentRequest(Guid? UserId, UserRole? Role, bool UseOnCallSchedule);
+public record AddAssignmentRequest(Guid? UserId, EscalationRole? EscalationRole, bool UseOnCallSchedule);

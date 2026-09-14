@@ -97,7 +97,7 @@ INSERT INTO EscalationTiers (Id, EscalationPolicyId, TenantId, [Level], Escalate
 (@Tier1_2, @Policy1, @TenantId, 2, 15),
 (@Tier1_3, @Policy1, @TenantId, 3, 30);
 
-INSERT INTO EscalationTierAssignments (Id, EscalationTierId, TenantId, UserId, Role, UseOnCallSchedule) VALUES
+INSERT INTO EscalationTierAssignments (Id, EscalationTierId, TenantId, UserId, EscalationRole, UseOnCallSchedule) VALUES
 -- Tier 1: notify all responders + on-call
 (NEWID(), @Tier1_1, @TenantId, NULL,    'Responder', 0),
 (NEWID(), @Tier1_1, @TenantId, NULL,    NULL,         1),
@@ -117,7 +117,7 @@ INSERT INTO EscalationTiers (Id, EscalationPolicyId, TenantId, [Level], Escalate
 (@Tier2_1, @Policy2, @TenantId, 1, 10),
 (@Tier2_2, @Policy2, @TenantId, 2, 30);
 
-INSERT INTO EscalationTierAssignments (Id, EscalationTierId, TenantId, UserId, Role, UseOnCallSchedule) VALUES
+INSERT INTO EscalationTierAssignments (Id, EscalationTierId, TenantId, UserId, EscalationRole, UseOnCallSchedule) VALUES
 -- Tier 1: notify specific responder
 (NEWID(), @Tier2_1, @TenantId, @ResponderId, NULL, 0),
 -- Tier 2: notify admin user

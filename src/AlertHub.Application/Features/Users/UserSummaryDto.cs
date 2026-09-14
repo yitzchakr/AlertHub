@@ -2,4 +2,10 @@ using AlertHub.Domain.Entities;
 
 namespace AlertHub.Application.Features.Users;
 
-public record UserSummaryDto(Guid Id, string DisplayName, string Email, UserRole Role);
+public record UserSummaryDto(
+    Guid Id,
+    string DisplayName,
+    string Email,
+    PermissionRole PermissionRole,
+    EscalationRole EscalationRole,
+    DateTime? DeactivatedAt);
