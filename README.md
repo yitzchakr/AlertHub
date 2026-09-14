@@ -139,7 +139,7 @@ the first sign-in or the first page.
 dotnet test
 ```
 
-266 tests across three projects. Application tests run against SQLite in-memory with two
+268 tests across three projects. Application tests run against SQLite in-memory with two
 seeded tenants, so tenant isolation is asserted rather than assumed. Where a rule exists in
 both C# and SQL — the half-open `[Start, End)` on-call window, for instance —
 `OnCallShiftQueriesTests` asserts the two agree, because a filter that drifts from the
