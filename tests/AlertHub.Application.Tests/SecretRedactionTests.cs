@@ -46,7 +46,7 @@ public class SecretRedactionTests
     {
         var rendered = new CreateUserCommand(
             "Dana Responder", Secret, "dana@acme.test",
-            PermissionRole.Responder, EscalationRole.Responder).ToString();
+            PermissionRole.Member, EscalationRole.Responder).ToString();
 
         Assert.DoesNotContain(Secret, rendered);
         Assert.Contains(Marker, rendered);

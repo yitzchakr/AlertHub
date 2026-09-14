@@ -14,6 +14,9 @@ namespace AlertHub.Application.Tests;
 /// up, made through a screen that said nothing about paging. These tests hold the two apart
 /// in both directions: authorization must not move paging, and paging must not confer
 /// authorization.
+///
+/// The two enums no longer share a single value name, which makes the confusion hard to
+/// restate. That is the point; these tests guard the behaviour the vocabulary now advertises.
 /// </summary>
 public class RoleSplitTests
 {
@@ -34,19 +37,19 @@ public class RoleSplitTests
     }
 
     // The bug the split exists to remove: this person administers AlertHub but answers the
-    // responder rota, and an Admin-targeting tier must leave them alone.
+    // responder rota, and a Manager-targeting tier must leave them alone.
     [Fact]
-    public async Task An_admin_who_pages_as_a_responder_is_not_swept_by_an_admin_tier()
+    public async Task An_admin_who_pages_as_a_responder_is_not_swept_by_a_manager_tier()
     {
         using var fixture = new TestDb();
         var platformAdmin = fixture.AddUser(
             "priya@acme.test", "Priya Platform", PermissionRole.Admin, EscalationRole.Responder);
-        AlsoPageRole(fixture, EscalationRole.Admin);
+        AlsoPageRole(fixture, EscalationRole.Manager);
 
         var targets = await ResolverFor(fixture).ResolveTierTargetsAsync(
             fixture.OnCallOnlyTierId, fixture.ServiceId, OutsideAnyShift, CancellationToken.None);
 
-        // Avery, whose escalation role really is Admin, is still reached — so the sweep ran
+        // Avery, whose escalation role really is Manager, is still reached — so the sweep ran
         // and the absence below is about Priya's escalation role, not a dead tier.
         Assert.Contains(targets, t => t.UserId == fixture.AdminId);
         Assert.DoesNotContain(targets, t => t.UserId == platformAdmin.Id);
@@ -54,47 +57,47 @@ public class RoleSplitTests
 
     // And the other direction: carrying a pager is not a grant of authority.
     [Fact]
-    public async Task Someone_paged_as_an_admin_need_not_hold_admin_permissions()
+    public async Task Someone_paged_as_a_manager_need_not_hold_admin_permissions()
     {
         using var fixture = new TestDb();
         var support = fixture.AddUser(
-            "sam@acme.test", "Sam Support", PermissionRole.Viewer, EscalationRole.Admin);
-        AlsoPageRole(fixture, EscalationRole.Admin);
+            "sam@acme.test", "Sam Support", PermissionRole.Member, EscalationRole.Manager);
+        AlsoPageRole(fixture, EscalationRole.Manager);
 
         var targets = await ResolverFor(fixture).ResolveTierTargetsAsync(
             fixture.OnCallOnlyTierId, fixture.ServiceId, OutsideAnyShift, CancellationToken.None);
 
         Assert.Contains(targets, t => t.UserId == support.Id);
-        Assert.Equal(PermissionRole.Viewer, support.PermissionRole);
+        Assert.Equal(PermissionRole.Member, support.PermissionRole);
     }
 
     [Fact]
     public async Task A_role_sweep_reads_the_escalation_role_and_ignores_the_permission_role()
     {
         using var fixture = new TestDb();
-        var viewerOnPager = fixture.AddUser(
-            "quinn@acme.test", "Quinn Quiet", PermissionRole.Viewer, EscalationRole.Responder);
+        var memberOnPager = fixture.AddUser(
+            "quinn@acme.test", "Quinn Quiet", PermissionRole.Member, EscalationRole.Responder);
 
         // MixedTier pages the Responder escalation role.
         var targets = await ResolverFor(fixture).ResolveTierTargetsAsync(
             fixture.MixedTierId, fixture.ServiceId, OutsideAnyShift, CancellationToken.None);
 
-        Assert.Contains(targets, t => t.UserId == viewerOnPager.Id);
+        Assert.Contains(targets, t => t.UserId == memberOnPager.Id);
         Assert.All(targets, t => Assert.Equal(EscalationTargetSource.Role, t.Source));
     }
 
     // The claim behind every RequireRole check. If this carried the escalation role, putting
-    // somebody on the admin rota would hand them the admin endpoints.
+    // somebody on the manager rota would hand them the admin endpoints.
     [Fact]
     public void The_role_claim_carries_the_permission_role()
     {
         var user = User.Create(
             Guid.NewGuid(), "sam@acme.test", "Sam Support", "hash",
-            PermissionRole.Viewer, EscalationRole.Admin);
+            PermissionRole.Member, EscalationRole.Manager);
 
         var token = new JwtSecurityTokenHandler().ReadJwtToken(TokenServiceFor().GenerateAccessToken(user));
 
-        Assert.Equal("Viewer", token.Claims.Single(c => c.Type == "role").Value);
+        Assert.Equal("Member", token.Claims.Single(c => c.Type == "role").Value);
     }
 
     private static TokenService TokenServiceFor() =>

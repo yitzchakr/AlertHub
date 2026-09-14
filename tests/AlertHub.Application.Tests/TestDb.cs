@@ -70,16 +70,16 @@ public sealed class TestDb : IDisposable
 
         var admin = User.Create(
             TenantId, "admin@acme.test", "Avery Admin", "hash",
-            PermissionRole.Admin, EscalationRole.Admin);
+            PermissionRole.Admin, EscalationRole.Manager);
         var responder = User.Create(
             TenantId, "dana@acme.test", "Dana Responder", "hash",
-            PermissionRole.Responder, EscalationRole.Responder);
+            PermissionRole.Member, EscalationRole.Responder);
         var secondResponder = User.Create(
             TenantId, "eli@acme.test", "Eli Responder", "hash",
-            PermissionRole.Responder, EscalationRole.Responder);
+            PermissionRole.Member, EscalationRole.Responder);
         var otherTenantResponder = User.Create(
             OtherTenantId, "zoe@globex.test", "Zoe Outsider", "hash",
-            PermissionRole.Responder, EscalationRole.Responder);
+            PermissionRole.Member, EscalationRole.Responder);
         AdminId = admin.Id;
         ResponderId = responder.Id;
         SecondResponderId = secondResponder.Id;

@@ -104,7 +104,7 @@ INSERT INTO EscalationTierAssignments (Id, EscalationTierId, TenantId, UserId, E
 -- Tier 2: notify specific admin user
 (NEWID(), @Tier1_2, @TenantId, @UserId, NULL,         0),
 -- Tier 3: notify all admins
-(NEWID(), @Tier1_3, @TenantId, NULL,    'Admin',      0);
+(NEWID(), @Tier1_3, @TenantId, NULL,    'Manager',    0);
 
 -- Policy 2: Business Services (2 tiers)
 DECLARE @Policy2 UNIQUEIDENTIFIER = NEWID();

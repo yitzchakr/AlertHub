@@ -191,7 +191,7 @@ public sealed class TestHost : IDisposable
         var service = Service.Create(tenant.Id, serviceName);
         var responder = User.Create(
             tenant.Id, $"responder@{tenantName}.test", $"{tenantName} Responder", "hash",
-            PermissionRole.Responder, EscalationRole.Responder);
+            PermissionRole.Member, EscalationRole.Responder);
 
         var policy = EscalationPolicy.Create(tenant.Id, $"{tenantName} Critical");
         var tier1 = policy.AddTier(1, 5);

@@ -8,7 +8,7 @@ public class UserTests
 
     private static User AUser() => User.Create(
         Guid.NewGuid(), "dana@acme.test", "Dana Responder", "hash",
-        PermissionRole.Responder, EscalationRole.Responder);
+        PermissionRole.Member, EscalationRole.Responder);
 
     [Fact]
     public void A_new_user_is_active()

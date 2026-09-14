@@ -110,7 +110,7 @@ public class UserDeactivationTests
         using var fixture = new TestDb();
         var hasher = new PassThroughHasher();
         var user = fixture.AddUser(
-            "leaver@acme.test", "Lee Leaver", PermissionRole.Responder, EscalationRole.Responder);
+            "leaver@acme.test", "Lee Leaver", PermissionRole.Member, EscalationRole.Responder);
         SetPassword(fixture, user.Id, hasher.Hash("Sup3rSecret"));
 
         var before = await LoginHandler.HandleAsync(

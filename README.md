@@ -149,16 +149,28 @@ in-memory predicate is a bug no single-sided test would catch.
 
 A user carries two roles, and conflating them is a mistake this codebase made once.
 
-| Column | Answers | Read by |
-| --- | --- | --- |
-| `PermissionRole` | What may this person do? | The `role` claim, every `RequireRole` |
-| `EscalationRole` | Who does a role-targeting tier page? | `EscalationTargetResolver` |
+| Column | Answers | Values | Read by |
+| --- | --- | --- | --- |
+| `PermissionRole` | What may this person do? | `Admin`, `Member` | The `role` claim, every `RequireRole` |
+| `EscalationRole` | Who does a role-targeting tier page? | `Manager`, `Responder` | `EscalationTargetResolver` |
 
 They were one field. Granting somebody Admin so they could edit a policy also added them to
 every tier that paged Admin, and demoting somebody could empty a tier nobody was watching —
-both through a screen that said nothing about paging. The values still overlap, because the
-migration copies the old column into the new one so no existing rota changes, but nothing
-keeps them aligned from here.
+both through a screen that said nothing about paging.
+
+The vocabularies are disjoint on purpose. While both enums had a value called `Admin`, the
+two concepts read as one word in the schema, the API and the UI, which is what let that bug
+hide. Nobody mistakes `Manager` for a permission.
+
+`PermissionRole` has two values because two is what the API enforces: every authorization
+check asks whether the caller is `Admin`, and nothing distinguishes the rest. The retired
+`Viewer` read as though it were read-only while permitting incident creation, service
+creation and escalation-policy deletion — a promise the code never kept. `Member` rather
+than `Employee` because contractors and partner on-call staff belong here too.
+
+Both enums serialize to JSON as **numbers**, not names — there is no `JsonStringEnumConverter`
+— while the database stores the name as a string. So reordering a value is a breaking wire
+change even though the schema is untouched, and the front-end maps them positionally.
 
 ## Leavers
 
