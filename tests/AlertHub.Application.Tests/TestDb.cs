@@ -122,10 +122,10 @@ public sealed class TestDb : IDisposable
     /// <summary>
     /// Adds a person to the current tenant. Takes both roles separately so a test can set
     /// up the combinations the fixture's three people do not cover — an Admin who is not
-    /// paged as one, for instance.
+    /// paged as one, or somebody in no role sweep at all (a null escalation role).
     /// </summary>
     public User AddUser(
-        string email, string displayName, PermissionRole permissionRole, EscalationRole escalationRole)
+        string email, string displayName, PermissionRole permissionRole, EscalationRole? escalationRole)
     {
         var user = User.Create(TenantId, email, displayName, "hash", permissionRole, escalationRole);
 

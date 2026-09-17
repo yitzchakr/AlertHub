@@ -34,9 +34,12 @@ public class EscalationTargetResolver(DbContext db, IOnCallResolver onCall) : IE
             }
         }
 
+        // Kept nullable so this translates to a SQL IN list against a nullable column.
+        // NULL matches nothing in an IN list, which is exactly the rule wanted: somebody
+        // with no escalation role answers no sweep, and it costs no special case here.
         var roles = assignments
             .Where(a => a.EscalationRole.HasValue)
-            .Select(a => a.EscalationRole!.Value)
+            .Select(a => a.EscalationRole)
             .Distinct()
             .ToList();
 

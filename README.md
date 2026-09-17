@@ -139,7 +139,7 @@ the first sign-in or the first page.
 dotnet test
 ```
 
-268 tests across three projects. Application tests run against SQLite in-memory with two
+271 tests across three projects. Application tests run against SQLite in-memory with two
 seeded tenants, so tenant isolation is asserted rather than assumed. Where a rule exists in
 both C# and SQL — the half-open `[Start, End)` on-call window, for instance —
 `OnCallShiftQueriesTests` asserts the two agree, because a filter that drifts from the
@@ -152,7 +152,7 @@ A user carries two roles, and conflating them is a mistake this codebase made on
 | Column | Answers | Values | Read by |
 | --- | --- | --- | --- |
 | `PermissionRole` | What may this person do? | `Admin`, `Member` | The `role` claim, every `RequireRole` |
-| `EscalationRole` | Who does a role-targeting tier page? | `Manager`, `Responder` | `EscalationTargetResolver` |
+| `EscalationRole` | Who does a role-targeting tier page? | `Manager`, `Responder`, or null | `EscalationTargetResolver` |
 
 They were one field. Granting somebody Admin so they could edit a policy also added them to
 every tier that paged Admin, and demoting somebody could empty a tier nobody was watching —
@@ -167,6 +167,12 @@ check asks whether the caller is `Admin`, and nothing distinguishes the rest. Th
 `Viewer` read as though it were read-only while permitting incident creation, service
 creation and escalation-policy deletion — a promise the code never kept. `Member` rather
 than `Employee` because contractors and partner on-call staff belong here too.
+
+A null `EscalationRole` means no role sweep reaches that person — the way to say "do not
+page them for what they are". It is narrower than "never paged": they are still reached by
+being named on a tier, or by being on the rota. Before it existed the only way to express
+this was to hold a role that no tier happened to target, which worked by coincidence and
+broke the moment somebody added one.
 
 Both enums serialize to JSON as **numbers**, not names — there is no `JsonStringEnumConverter`
 — while the database stores the name as a string. So reordering a value is a breaking wire

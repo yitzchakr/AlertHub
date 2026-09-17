@@ -100,6 +100,63 @@ public class RoleSplitTests
         Assert.Equal("Member", token.Claims.Single(c => c.Type == "role").Value);
     }
 
+    // A null escalation role is the way to say "do not page this person for what they are".
+    // It has to hold against every sweep on a tier, not just the one being tested.
+    [Fact]
+    public async Task Somebody_with_no_escalation_role_answers_no_role_sweep()
+    {
+        using var fixture = new TestDb();
+        var unpaged = fixture.AddUser(
+            "nina@acme.test", "Nina Nopage", PermissionRole.Admin, null);
+        AlsoPageRole(fixture, EscalationRole.Manager);
+        AlsoPageRole(fixture, EscalationRole.Responder);
+
+        var targets = await ResolverFor(fixture).ResolveTierTargetsAsync(
+            fixture.OnCallOnlyTierId, fixture.ServiceId, OutsideAnyShift, CancellationToken.None);
+
+        // Both sweeps demonstrably ran — Avery answers Manager, Dana answers Responder — so
+        // Nina's absence is her null role rather than a tier that reached nobody.
+        Assert.Contains(targets, t => t.UserId == fixture.AdminId);
+        Assert.Contains(targets, t => t.UserId == fixture.ResponderId);
+        Assert.DoesNotContain(targets, t => t.UserId == unpaged.Id);
+    }
+
+    // The half that makes "none" safe to choose: it excuses somebody from role sweeps, not
+    // from being paged. Reading it as "never woken" would be a dangerous thing to believe.
+    [Fact]
+    public async Task Somebody_with_no_escalation_role_is_still_paged_when_named_directly()
+    {
+        using var fixture = new TestDb();
+        var unpaged = fixture.AddUser(
+            "nina@acme.test", "Nina Nopage", PermissionRole.Admin, null);
+        fixture.Db.Add(EscalationTierAssignment.ForUser(
+            fixture.OnCallOnlyTierId, fixture.TenantId, unpaged.Id));
+        fixture.Db.SaveChanges();
+
+        var targets = await ResolverFor(fixture).ResolveTierTargetsAsync(
+            fixture.OnCallOnlyTierId, fixture.ServiceId, OutsideAnyShift, CancellationToken.None);
+
+        var target = Assert.Single(targets);
+        Assert.Equal(unpaged.Id, target.UserId);
+        Assert.Equal(EscalationTargetSource.DirectUser, target.Source);
+    }
+
+    [Fact]
+    public async Task Somebody_with_no_escalation_role_is_still_paged_when_on_call()
+    {
+        using var fixture = new TestDb();
+        var unpaged = fixture.AddUser(
+            "nina@acme.test", "Nina Nopage", PermissionRole.Admin, null);
+        fixture.AddShift(fixture.ServiceId, unpaged.Id, Start, End);
+
+        var targets = await ResolverFor(fixture).ResolveTierTargetsAsync(
+            fixture.OnCallOnlyTierId, fixture.ServiceId, Start.AddHours(3), CancellationToken.None);
+
+        var target = Assert.Single(targets);
+        Assert.Equal(unpaged.Id, target.UserId);
+        Assert.Equal(EscalationTargetSource.OnCall, target.Source);
+    }
+
     private static TokenService TokenServiceFor() =>
         new(Options.Create(new JwtSettings
         {
