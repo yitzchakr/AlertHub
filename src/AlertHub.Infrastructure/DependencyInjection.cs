@@ -81,12 +81,13 @@ namespace AlertHub.Infrastructure;
         services.AddHttpContextAccessor();
         services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
         services.AddScoped<ITokenService, TokenService>();
-        // One instance per scope serving both interfaces. Registering the two separately
-        // would hand out two objects, so a worker's SetTenant would update an instance the
-        // DbContext never reads — and the worker would then find nothing, silently.
+        // One instance per scope behind both registrations. TenantScopeFactory assigns the
+        // tenant on the concrete instance; if ITenantContext were registered separately it
+        // would be a second object the DbContext reads instead, and a worker would then
+        // find nothing, silently.
         services.AddScoped<ScopedTenantContext>();
         services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<ScopedTenantContext>());
-        services.AddScoped<ITenantScope>(sp => sp.GetRequiredService<ScopedTenantContext>());
+        services.AddSingleton<ITenantScopeFactory, TenantScopeFactory>();
 
         // Live in the Application assembly (it references EF Core) but are registered
         // here alongside the other scoped services.

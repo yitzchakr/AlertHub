@@ -14,6 +14,7 @@ namespace AlertHub.Application.Features.Escalations;
 /// </summary>
 public class EscalationScanner(
     IServiceScopeFactory scopeFactory,
+    ITenantScopeFactory tenantScopeFactory,
     ILogger<EscalationScanner> logger)
 {
     public async Task<EscalationPassSummary> RunAsync(DateTime utcNow, CancellationToken ct)
@@ -68,11 +69,9 @@ public class EscalationScanner(
     private async Task<EscalationOutcome> EscalateAsync(
         EscalationCandidate candidate, DateTime utcNow, CancellationToken ct)
     {
-        using var scope = scopeFactory.CreateScope();
-
-        // Assigned before anything else resolves, so every query in this scope is filtered
-        // to the tenant that owns the incident.
-        scope.ServiceProvider.GetRequiredService<ITenantScope>().SetTenant(candidate.TenantId);
+        // Bound to the incident's tenant from the moment it exists, so every query in this
+        // scope is filtered to the tenant that owns the incident.
+        using var scope = tenantScopeFactory.CreateScopeFor(candidate.TenantId);
 
         var escalator = scope.ServiceProvider.GetRequiredService<IIncidentEscalator>();
         return await escalator.EscalateAsync(candidate.IncidentId, utcNow, ct);

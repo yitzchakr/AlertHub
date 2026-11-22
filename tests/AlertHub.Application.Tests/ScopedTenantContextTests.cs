@@ -106,6 +106,14 @@ public class ScopedTenantContextTests
         Assert.Equal(Tenant, context.TenantId);
         Assert.Equal(Tenant, context.TenantId);
     }
+
+    // The concrete class is registered in DI, so a public setter would be reachable by
+    // anything able to inject it. TenantScopeFactory must stay the only way in.
+    [Fact]
+    public void SetTenant_is_not_public()
+    {
+        Assert.Null(typeof(ScopedTenantContext).GetMethod(nameof(ScopedTenantContext.SetTenant)));
+    }
 }
 
 /// <summary>
@@ -149,41 +157,100 @@ public class TenantContextRegistrationTests
         return services.BuildServiceProvider();
     }
 
+    // The factory assigns the concrete instance and the DbContext reads ITenantContext, so
+    // the two must be one object or the assignment never reaches the filter.
     [Fact]
-    public void Both_tenant_interfaces_resolve_to_the_same_scoped_instance()
+    public void The_tenant_context_and_its_concrete_class_are_the_same_scoped_instance()
     {
         using var provider = BuildContainer();
         using var scope = provider.CreateScope();
 
         var read = scope.ServiceProvider.GetRequiredService<ITenantContext>();
-        var write = scope.ServiceProvider.GetRequiredService<ITenantScope>();
+        var concrete = scope.ServiceProvider.GetRequiredService<ScopedTenantContext>();
 
-        Assert.Same(read, write);
+        Assert.Same(read, concrete);
     }
 
     [Fact]
-    public void Separate_scopes_get_separate_instances()
+    public void A_scope_from_the_factory_reports_its_tenant()
     {
         using var provider = BuildContainer();
-        using var first = provider.CreateScope();
-        using var second = provider.CreateScope();
+        var factory = provider.GetRequiredService<ITenantScopeFactory>();
 
-        first.ServiceProvider.GetRequiredService<ITenantScope>().SetTenant(Tenant);
+        using var scope = factory.CreateScopeFor(Tenant);
+
+        Assert.Equal(Tenant, scope.ServiceProvider.GetRequiredService<ITenantContext>().TenantId);
+    }
+
+    [Fact]
+    public void A_tenant_scope_does_not_leak_into_other_scopes()
+    {
+        using var provider = BuildContainer();
+        var factory = provider.GetRequiredService<ITenantScopeFactory>();
+
+        using var tenantScope = factory.CreateScopeFor(Tenant);
+        using var plainScope = provider.CreateScope();
+
+        Assert.Null(plainScope.ServiceProvider.GetRequiredService<ITenantContext>().TenantId);
+    }
+
+    // Each call must be its own scope, which is what lets the scanner walk tenants one
+    // incident at a time without ever reassigning.
+    [Fact]
+    public void Each_factory_scope_is_independent()
+    {
+        var other = Guid.Parse("33333333-3333-3333-3333-333333333333");
+
+        using var provider = BuildContainer();
+        var factory = provider.GetRequiredService<ITenantScopeFactory>();
+
+        using var first = factory.CreateScopeFor(Tenant);
+        using var second = factory.CreateScopeFor(other);
 
         Assert.Equal(Tenant, first.ServiceProvider.GetRequiredService<ITenantContext>().TenantId);
-        Assert.Null(second.ServiceProvider.GetRequiredService<ITenantContext>().TenantId);
+        Assert.Equal(other, second.ServiceProvider.GetRequiredService<ITenantContext>().TenantId);
     }
 
-    // The end-to-end proof: a tenant assigned through the scope reaches the query filter,
-    // even though the DbContext captured its tenant context in the constructor.
+    // The guard that keeps the factory from becoming a way around the query filter.
     [Fact]
-    public void A_tenant_assigned_through_the_scope_reaches_the_query_filter()
+    public void The_factory_is_refused_during_a_request()
     {
         using var provider = BuildContainer();
-        using var scope = provider.CreateScope();
+        var factory = provider.GetRequiredService<ITenantScopeFactory>();
 
+        // HttpContextAccessor keeps the context in a static AsyncLocal, so setting it on
+        // any instance is what the container's accessor sees as well.
+        var accessor = new HttpContextAccessor { HttpContext = new DefaultHttpContext() };
+        try
+        {
+            var ex = Assert.Throws<InvalidOperationException>(() => factory.CreateScopeFor(Tenant));
+
+            Assert.Contains("comes from the token", ex.Message);
+        }
+        finally
+        {
+            accessor.HttpContext = null;
+        }
+    }
+
+    [Fact]
+    public void The_factory_rejects_an_empty_id()
+    {
+        using var provider = BuildContainer();
+        var factory = provider.GetRequiredService<ITenantScopeFactory>();
+
+        Assert.Throws<ArgumentException>(() => factory.CreateScopeFor(Guid.Empty));
+    }
+
+    // The end-to-end proof: a tenant chosen through the factory reaches the query filter.
+    [Fact]
+    public void A_tenant_scope_from_the_factory_reaches_the_query_filter()
+    {
+        using var provider = BuildContainer();
+        var factory = provider.GetRequiredService<ITenantScopeFactory>();
+
+        using var scope = factory.CreateScopeFor(Tenant);
         var db = scope.ServiceProvider.GetRequiredService<DbContext>();
-        scope.ServiceProvider.GetRequiredService<ITenantScope>().SetTenant(Tenant);
 
         var sql = db.Set<Incident>().ToQueryString();
 

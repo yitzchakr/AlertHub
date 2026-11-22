@@ -10,18 +10,23 @@ namespace AlertHub.Infrastructure;
 /// filter turns into "no rows" rather than an error.
 /// </summary>
 public sealed class ScopedTenantContext(IHttpContextAccessor httpContextAccessor)
-    : ITenantContext, ITenantScope
+    : ITenantContext
 {
     private Guid _assigned;
     private bool _isAssigned;
 
     public Guid? TenantId => _isAssigned ? _assigned : FromClaims();
 
-    public void SetTenant(Guid tenantId)
+    /// <summary>
+    /// Internal so the only way in is <see cref="TenantScopeFactory"/>, which calls it on a
+    /// brand-new scope. The concrete class is registered in DI, so a public setter here
+    /// would be reachable by anything able to inject it, the API's controllers included.
+    /// </summary>
+    internal void SetTenant(Guid tenantId)
     {
         // A request's tenant comes from the caller's token and nothing else. Without this,
-        // any code that got hold of ITenantScope could step across the very boundary the
-        // query filter exists to enforce.
+        // code that got hold of ITenantScopeFactory could open a scope for another tenant
+        // and step across the very boundary the query filter exists to enforce.
         if (httpContextAccessor.HttpContext is not null)
             throw new InvalidOperationException(
                 "The tenant cannot be assigned during an HTTP request; it comes from the token.");

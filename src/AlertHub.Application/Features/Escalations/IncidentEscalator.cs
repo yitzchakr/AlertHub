@@ -25,8 +25,9 @@ public class IncidentEscalator(
         // would look like a success that happened to find no work.
         var tenantId = tenantContext.TenantId
             ?? throw new InvalidOperationException(
-                "IncidentEscalator requires a tenant-scoped context. Without one the query "
-              + "filter matches nothing and this would silently do no work.");
+                "IncidentEscalator requires a tenant-scoped context; resolve it from a scope "
+              + "created by ITenantScopeFactory. Without one the query filter matches "
+              + "nothing and this would silently do no work.");
 
         var incident = await db.Set<Incident>()
             .FirstOrDefaultAsync(i => i.Id == incidentId, ct);
