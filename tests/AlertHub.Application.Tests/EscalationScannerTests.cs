@@ -128,6 +128,7 @@ public class EscalationScannerTests
     {
         var descriptors = TenantContextRegistrationTests.InfrastructureDescriptors();
 
+        Assert.Contains(descriptors, d => d.ServiceType == typeof(ITenantScopeFactory));
         Assert.Contains(descriptors, d => d.ServiceType == typeof(INotificationSender));
         Assert.Contains(descriptors, d => d.ServiceType == typeof(IIncidentEscalator));
         Assert.Contains(descriptors, d => d.ServiceType == typeof(EscalationScanner));
@@ -164,7 +165,7 @@ public sealed class TestHost : IDisposable
 
         services.AddScoped<ScopedTenantContext>();
         services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<ScopedTenantContext>());
-        services.AddScoped<ITenantScope>(sp => sp.GetRequiredService<ScopedTenantContext>());
+        services.AddSingleton<ITenantScopeFactory, TenantScopeFactory>();
 
         services.AddScoped<IOnCallResolver, OnCallResolver>();
         services.AddScoped<IEscalationTargetResolver, EscalationTargetResolver>();
