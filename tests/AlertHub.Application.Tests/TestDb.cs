@@ -70,16 +70,16 @@ public sealed class TestDb : IDisposable
 
         var admin = User.Create(
             TenantId, "admin@acme.test", "Avery Admin", "hash",
-            PermissionRole.Admin, EscalationRole.Admin);
+            PermissionRole.Admin, EscalationRole.Manager);
         var responder = User.Create(
             TenantId, "dana@acme.test", "Dana Responder", "hash",
-            PermissionRole.Responder, EscalationRole.Responder);
+            PermissionRole.Member, EscalationRole.Responder);
         var secondResponder = User.Create(
             TenantId, "eli@acme.test", "Eli Responder", "hash",
-            PermissionRole.Responder, EscalationRole.Responder);
+            PermissionRole.Member, EscalationRole.Responder);
         var otherTenantResponder = User.Create(
             OtherTenantId, "zoe@globex.test", "Zoe Outsider", "hash",
-            PermissionRole.Responder, EscalationRole.Responder);
+            PermissionRole.Member, EscalationRole.Responder);
         AdminId = admin.Id;
         ResponderId = responder.Id;
         SecondResponderId = secondResponder.Id;
@@ -122,10 +122,10 @@ public sealed class TestDb : IDisposable
     /// <summary>
     /// Adds a person to the current tenant. Takes both roles separately so a test can set
     /// up the combinations the fixture's three people do not cover — an Admin who is not
-    /// paged as one, for instance.
+    /// paged as one, or somebody in no role sweep at all (a null escalation role).
     /// </summary>
     public User AddUser(
-        string email, string displayName, PermissionRole permissionRole, EscalationRole escalationRole)
+        string email, string displayName, PermissionRole permissionRole, EscalationRole? escalationRole)
     {
         var user = User.Create(TenantId, email, displayName, "hash", permissionRole, escalationRole);
 

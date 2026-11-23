@@ -10,7 +10,7 @@ public record CreateUserCommand(
     string Password,
     string Email,
     PermissionRole PermissionRole,
-    EscalationRole EscalationRole)
+    EscalationRole? EscalationRole)
 {
     /// <summary>
     /// This command carries the new account's plaintext password, and a validation failure
@@ -23,7 +23,9 @@ public record CreateUserCommand(
         builder.Append(
             $"{nameof(DisplayName)} = {DisplayName}, {nameof(Password)} = [redacted], " +
             $"{nameof(Email)} = {Email}, {nameof(PermissionRole)} = {PermissionRole}, " +
-            $"{nameof(EscalationRole)} = {EscalationRole}");
+            // A null renders as an empty string, which reads as a missing field rather than
+            // as the deliberate answer it is.
+            $"{nameof(EscalationRole)} = {(EscalationRole?.ToString() ?? "none")}");
         return true;
     }
 }
@@ -32,5 +34,5 @@ public record CreateUserResponse(
     Guid Id,
     string DisplayName,
     PermissionRole PermissionRole,
-    EscalationRole EscalationRole,
+    EscalationRole? EscalationRole,
     DateTime CreatedAt);

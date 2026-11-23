@@ -14,7 +14,7 @@ public class CreateUserTests
 {
     private static Task<CreateUserResponse> Create(
         TestDb fixture, string email, string displayName = "New Person",
-        PermissionRole permissionRole = PermissionRole.Responder,
+        PermissionRole permissionRole = PermissionRole.Member,
         EscalationRole escalationRole = EscalationRole.Responder) =>
         CreateUserHandler.HandleAsync(
             new CreateUserCommand(displayName, "Sup3rSecret", email, permissionRole, escalationRole),

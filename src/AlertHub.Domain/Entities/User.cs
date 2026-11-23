@@ -10,8 +10,15 @@ public class User : ITenantEntity
     /// <summary>What this user may do. Drives the "role" claim and every RequireRole check.</summary>
     public PermissionRole PermissionRole { get; private set; }
 
-    /// <summary>Which role sweep pages this user. Independent of what they may do.</summary>
-    public EscalationRole EscalationRole { get; private set; }
+    /// <summary>
+    /// Which role sweep pages this user, or null for none of them.
+    ///
+    /// Null is narrower than "never paged": it keeps somebody out of role sweeps while
+    /// leaving them reachable by being named on a tier or by being on the rota. Before it
+    /// existed the only way to express this was to hold a role no tier happened to target,
+    /// which worked by coincidence and broke the moment one did.
+    /// </summary>
+    public EscalationRole? EscalationRole { get; private set; }
 
     public string PasswordHash { get; private set; } = default!;
     public DateTime CreatedAt { get; private set; }
@@ -41,7 +48,7 @@ public class User : ITenantEntity
         string displayName,
         string passwordHash,
         PermissionRole permissionRole,
-        EscalationRole escalationRole)
+        EscalationRole? escalationRole)
     {
         return new User
         {

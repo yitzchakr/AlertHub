@@ -30,8 +30,11 @@ public class CreateUserValidator:AbstractValidator<CreateUserCommand>
         RuleFor(x => x.PermissionRole)
             .IsInEnum()
             .WithMessage("Permission role must be a valid PermissionRole");
+        // Null is a legitimate answer — "no role sweep pages this person" — so the enum
+        // check only applies once a value is actually given.
         RuleFor(x => x.EscalationRole)
             .IsInEnum()
+            .When(x => x.EscalationRole.HasValue)
             .WithMessage("Escalation role must be a valid EscalationRole");
     }
 }
